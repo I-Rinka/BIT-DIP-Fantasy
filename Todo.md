@@ -2,4 +2,8 @@
 
 ## 20.1.11
 
-CMake怎么开debug模式
+CMake开debug模式
+
+```CMake
+SET(CMAKE_BUILD_TYPE "Debug")
+```

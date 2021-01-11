@@ -5,12 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "make",
+            "name": "debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/DisplayImage",
+            "program": "${workspaceFolder}/DisplayImage", //启动的程序
             "args": [
-                "./input.jpg"
+                "./input.jpg" //输入的图像
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -13,7 +13,9 @@ int main(int argc, char const *argv[])
     {
         return -1;
     }
+    
     namedWindow("Dispay Image", WINDOW_AUTOSIZE);
+
     imshow("Display Image", image);
 
     waitKey(0);
