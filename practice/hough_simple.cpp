@@ -66,11 +66,6 @@ void Hough_Fantasy::PrintLineToImage(Mat &input, int p, int theta, int val)
 
 void Hough_Fantasy::GetOnePoint(int &p_return, int &theta_return)
 {
-    long long the_size = (this->max_p + 1) * 2 * (90 + 180 + 1);
-
-    
-
-    /*
     unsigned int max = 0;
     int rt_theta = -1, rt_p = -1;
     int pmin = -(this->max_p), pmax = this->max_p;
@@ -92,7 +87,7 @@ void Hough_Fantasy::GetOnePoint(int &p_return, int &theta_return)
     }
 
     p_return = rt_p;
-    theta_return = rt_theta;*/
+    theta_return = rt_theta;
 }
 unsigned int *Hough_Fantasy::GetHoughPoint(int theta, int p)
 {
