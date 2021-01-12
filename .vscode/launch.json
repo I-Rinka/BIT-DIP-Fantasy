@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/DipFantasy", //启动的程序
             "args": [
-                "./input.jpg" //输入的图像
+                // "./input.jpg" //输入的图像
+                "inputs/class/2.png" //输入的图像
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -32,7 +33,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/DipFantasy", //启动的程序
             "args": [
-                "./input.jpg" //输入的图像
+                // "./input.jpg" //输入的图像
+                "inputs/class/2.png" //输入的图像
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
