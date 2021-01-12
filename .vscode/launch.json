@@ -8,7 +8,7 @@
             "name": "debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/DisplayImage", //启动的程序
+            "program": "${workspaceFolder}/DipFantasy", //启动的程序
             "args": [
                 "./input.jpg" //输入的图像
             ],
@@ -30,7 +30,7 @@
             "name": "make and debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/DisplayImage", //启动的程序
+            "program": "${workspaceFolder}/DipFantasy", //启动的程序
             "args": [
                 "./input.jpg" //输入的图像
             ],

@@ -111,44 +111,44 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named DisplayImage
+# Target rules for targets named DipFantasy
 
 # Build rule for target.
-DisplayImage: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 DisplayImage
-.PHONY : DisplayImage
+DipFantasy: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 DipFantasy
+.PHONY : DipFantasy
 
 # fast build rule for target.
-DisplayImage/fast:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/build
-.PHONY : DisplayImage/fast
+DipFantasy/fast:
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/build
+.PHONY : DipFantasy/fast
 
-DisplayImage.o: DisplayImage.cpp.o
+Main.o: Main.cpp.o
 
-.PHONY : DisplayImage.o
+.PHONY : Main.o
 
 # target to build an object file
-DisplayImage.cpp.o:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.o
-.PHONY : DisplayImage.cpp.o
+Main.cpp.o:
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/Main.cpp.o
+.PHONY : Main.cpp.o
 
-DisplayImage.i: DisplayImage.cpp.i
+Main.i: Main.cpp.i
 
-.PHONY : DisplayImage.i
+.PHONY : Main.i
 
 # target to preprocess a source file
-DisplayImage.cpp.i:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.i
-.PHONY : DisplayImage.cpp.i
+Main.cpp.i:
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/Main.cpp.i
+.PHONY : Main.cpp.i
 
-DisplayImage.s: DisplayImage.cpp.s
+Main.s: Main.cpp.s
 
-.PHONY : DisplayImage.s
+.PHONY : Main.s
 
 # target to generate assembly for a file
-DisplayImage.cpp.s:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/DisplayImage.cpp.s
-.PHONY : DisplayImage.cpp.s
+Main.cpp.s:
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/Main.cpp.s
+.PHONY : Main.cpp.s
 
 lib/DipFantasy.o: lib/DipFantasy.cpp.o
 
@@ -156,7 +156,7 @@ lib/DipFantasy.o: lib/DipFantasy.cpp.o
 
 # target to build an object file
 lib/DipFantasy.cpp.o:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/lib/DipFantasy.cpp.o
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/lib/DipFantasy.cpp.o
 .PHONY : lib/DipFantasy.cpp.o
 
 lib/DipFantasy.i: lib/DipFantasy.cpp.i
@@ -165,7 +165,7 @@ lib/DipFantasy.i: lib/DipFantasy.cpp.i
 
 # target to preprocess a source file
 lib/DipFantasy.cpp.i:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/lib/DipFantasy.cpp.i
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/lib/DipFantasy.cpp.i
 .PHONY : lib/DipFantasy.cpp.i
 
 lib/DipFantasy.s: lib/DipFantasy.cpp.s
@@ -174,7 +174,7 @@ lib/DipFantasy.s: lib/DipFantasy.cpp.s
 
 # target to generate assembly for a file
 lib/DipFantasy.cpp.s:
-	$(MAKE) -f CMakeFiles/DisplayImage.dir/build.make CMakeFiles/DisplayImage.dir/lib/DipFantasy.cpp.s
+	$(MAKE) -f CMakeFiles/DipFantasy.dir/build.make CMakeFiles/DipFantasy.dir/lib/DipFantasy.cpp.s
 .PHONY : lib/DipFantasy.cpp.s
 
 # Help Target
@@ -184,11 +184,11 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... DisplayImage"
+	@echo "... DipFantasy"
 	@echo "... edit_cache"
-	@echo "... DisplayImage.o"
-	@echo "... DisplayImage.i"
-	@echo "... DisplayImage.s"
+	@echo "... Main.o"
+	@echo "... Main.i"
+	@echo "... Main.s"
 	@echo "... lib/DipFantasy.o"
 	@echo "... lib/DipFantasy.i"
 	@echo "... lib/DipFantasy.s"

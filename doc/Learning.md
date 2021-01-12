@@ -97,10 +97,48 @@ git rm --cached CMakeFiles -r # 取消跟踪某一文件夹
 
 `git status -s`
 
-## Cmake使用
+## CMake使用
 
-Cmake一般会单独建一个文件夹来放`release`或者`release`。
+CMake是一个跨平台的C/C++的编译安装工具。CMake其实就相当于是一个脚本文件，通过`CMakeList.txt`中的参数，可以很轻松的生成复杂的`Makefile`，而无需自己编写。还有一个原因是，在跨平台环境下不同操作系统的工具链是不一样的，比如Windows中就不是使用make。而通过CMake可以生成跨平台的编译文件。
 
-Cmake的配置文件会用给出的`cmake <CMake list dic>`里的，而cmake生成的中间文件则是在当前文件夹中。
+CMake一般会单独建一个文件夹来放`release`或者`debug`。
+
+CMake的配置文件会用给出的`cmake <CMake list dic>`里的，而cmake生成的中间文件则是在当前文件夹中。
+
+本项目使用根目录来存放`CMakeLists.txt`，同时也直接在根目录存放CMake的各种编译文件，如果需要清除编译安装环境则使用vscode配置的`tasks`中的`clean`任务以删除文件夹。
+
+### CMake多文件编译
+
+如果要编译多个源文件，那么有两种方式:
+
++ 单独开一个lib目录，将自己的源文件单独编译成一个二进制库，再使用主函数进行链接
++ 将其他的源文件添加到生成可执行文件的列表，与主函数同时编译
+
+这里使用第二种方法
+
+以21.1.12本项目的CMakeList为例:
+
+```CMake
+cmake_minimum_required(VERSION 2.8)
+project( DipFantasy )
+
+SET(CMAKE_BUILD_TYPE "Debug")#设置debug
+
+find_package( OpenCV REQUIRED )#找到OpenCV的库
+
+include_directories( ./lib )#自己写的头文件
+aux_source_directory( ./lib My_LIBS )#实现头文件的各种源文件
+
+
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable( DipFantasy Main.cpp ${My_LIBS} )
+
+target_link_libraries( DipFantasy ${OpenCV_LIBS} )#链接OpenCV的库
+
+```
+
+这个CMake文件的基本流程是: 设置项目的属性(版本号、debug等)->找到OpenCV的库->添加自己库的include文件和源文件(所有源文件最后会储存到列表`My_LIBS`中) ->添加OpenCV的头文件->添加生成文件->把生成文件和OpenCV库链接
+
+通过`aux_source_directory( ./lib My_LIBS )`可以把所有源文件的地址都存入`${My_LIBS}`中，这样就可以直接调用`add_executable( DisplayImage DisplayImage.cpp ${My_LIBS} )`同时编译主函数文件`Main.cpp`和`.\lib`文件夹下的所有源文件了。
 
 ## GDB使用

@@ -64,17 +64,10 @@ void my_convolution(Mat &input, Mat &output)
     }
 }
 */
-int main(int argc, char const *argv[])
-{
-    if (argc < 2)
-    {
-        return -1;
-    }
-    Mat image;
-    image = imread(argv[1], 1);
-    // Mat image(1000,1000,CV_8UC3,Scalar(255,200,255));
 
-    cvtColor(image, image, COLOR_RGB2GRAY);
+void My_Sobel(Mat &input)
+{
+    cvtColor(input, input, COLOR_RGB2GRAY);
 
     Mat Blured;
     Size ksize;
@@ -91,12 +84,69 @@ int main(int argc, char const *argv[])
     // namedWindow("Display Image", WINDOW_AUTOSIZE); //系统自己的sobel
     // imshow("Display Image", t);                    //imshow似乎只能显示整数的
 
-    my_convolution(image, t);
+    my_convolution(input, t);
     namedWindow("Display Image2", WINDOW_AUTOSIZE);
     imshow("Display Image2", t); //imshow似乎只能显示整数的
     // Mat draw;
     // t.convertTo(draw, CV_8U, 2, 0); //alpha：放大倍数，beta：放大倍数加上的偏移量，这个难道不会溢出?
 
+    waitKey(0);
+}
+
+void My_Hist(Mat &input)
+{
+    uchar map[256];
+    long long hist[256] = {0};
+    for (int i = 0; i < input.rows; i++)
+    {
+        for (int j = 0; j < input.cols; j++)
+        {
+            uchar *p = GetPoint(input, i, j);
+            if (p != NULL)
+            {
+                hist[*p] += 1;
+            }
+        }
+    }
+    long long num = 0;
+    for (int i = 0; i < 256; i++)
+    {
+        num += hist[i];
+        map[i] = ((double)num / (double)(input.rows * input.cols)) * 256;
+    }
+
+    for (int i = 0; i < input.rows; i++)
+    {
+        for (int j = 0; j < input.cols; j++)
+        {
+            uchar *p = GetPoint(input, i, j);
+            if (p != NULL)
+            {
+                *p = map[*p];
+            }
+        }
+    }
+}
+
+int main(int argc, char const *argv[])
+{
+    if (argc < 2)
+    {
+        return -1;
+    }
+    Mat image;
+    image = imread(argv[1], 1);
+    cvtColor(image, image, COLOR_RGB2GRAY);
+    
+    namedWindow("Display Image1", WINDOW_AUTOSIZE);
+    imshow("Display Image1", image); //imshow似乎只能显示整数的
+
+    My_Hist(image);
+
+
+    namedWindow("Display Image2", WINDOW_AUTOSIZE);
+    imshow("Display Image2", image); //imshow似乎只能显示整数的
+    
     waitKey(0);
 
     return 0;
