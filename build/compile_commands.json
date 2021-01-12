@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/root/Dev/DIP-Fantasy/build",
+  "command": "/usr/bin/c++   -I/root/Dev/DIP-Fantasy/./lib -isystem /usr/local/include/opencv4  -g   -std=gnu++11 -o CMakeFiles/DisplayImage.dir/DisplayImage.cpp.o -c /root/Dev/DIP-Fantasy/DisplayImage.cpp",
+  "file": "/root/Dev/DIP-Fantasy/DisplayImage.cpp"
+},
+{
+  "directory": "/root/Dev/DIP-Fantasy/build",
+  "command": "/usr/bin/c++   -I/root/Dev/DIP-Fantasy/./lib -isystem /usr/local/include/opencv4  -g   -std=gnu++11 -o CMakeFiles/DisplayImage.dir/lib/DipFantasy.cpp.o -c /root/Dev/DIP-Fantasy/lib/DipFantasy.cpp",
+  "file": "/root/Dev/DIP-Fantasy/lib/DipFantasy.cpp"
+}
+]

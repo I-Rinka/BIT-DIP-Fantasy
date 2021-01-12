@@ -1,9 +1,6 @@
-#include <DipFantasy.h>
 #include <opencv4/opencv2/opencv.hpp>
-#include <stdio.h>
-
+#include <DipFantasy.h>
 using namespace cv;
-/*
 uchar *GetPoint(Mat &input, int x, int y)
 {
     int row_max = input.rows;
@@ -62,42 +59,4 @@ void my_convolution(Mat &input, Mat &output)
             }
         }
     }
-}
-*/
-int main(int argc, char const *argv[])
-{
-    if (argc < 2)
-    {
-        return -1;
-    }
-    Mat image;
-    image = imread(argv[1], 1);
-    // Mat image(1000,1000,CV_8UC3,Scalar(255,200,255));
-
-    cvtColor(image, image, COLOR_RGB2GRAY);
-
-    Mat Blured;
-    Size ksize;
-    ksize.height = 9;
-    ksize.width = 9;
-    // GaussianBlur(image, Blured, ksize, 2.0, 0, BORDER_DEFAULT);
-
-    // Mat Cannied;
-
-    // Sobel(Blured, Cannied, CV_32F, 1, 0);
-    Mat t;
-
-    // Sobel(Blured, t, CV_8U, 0, 1);
-    // namedWindow("Display Image", WINDOW_AUTOSIZE); //系统自己的sobel
-    // imshow("Display Image", t);                    //imshow似乎只能显示整数的
-
-    my_convolution(image, t);
-    namedWindow("Display Image2", WINDOW_AUTOSIZE);
-    imshow("Display Image2", t); //imshow似乎只能显示整数的
-    // Mat draw;
-    // t.convertTo(draw, CV_8U, 2, 0); //alpha：放大倍数，beta：放大倍数加上的偏移量，这个难道不会溢出?
-
-    waitKey(0);
-
-    return 0;
 }
