@@ -1,5 +1,9 @@
 {
     "files.associations": {
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "algorithm": "cpp",
+        "initializer_list": "cpp",
+        "stdexcept": "cpp",
+        "streambuf": "cpp"
     }
 }
