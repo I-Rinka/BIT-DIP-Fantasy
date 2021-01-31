@@ -5,12 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "debug",
+            "name": "main debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/DipFantasy", //启动的程序
             "args": [
-                // "./input.jpg" //输入的图像
                 "inputs/class/2.png" //输入的图像
             ],
             "stopAtEntry": false,
@@ -26,16 +25,14 @@
                     "ignoreFailures": true
                 }
             ],
+            "preLaunchTask": "main_debug"
         },
         {
-            "name": "make and debug",
+            "name": "module debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/DipFantasy", //启动的程序
-            "args": [
-                // "./input.jpg" //输入的图像
-                "inputs/class/2.png" //输入的图像
-            ],
+            "program": "${workspaceFolder}/lib/debug/DipFantasy_Debug", //启动的程序
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -49,7 +46,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "make"
+            "preLaunchTask": "module_debug"
         }
     ]
 }

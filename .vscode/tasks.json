@@ -20,17 +20,14 @@
             "problemMatcher": []
         },
         {
-            "label": "make",
+            "label": "main_debug",
             "type": "shell",
-            "command": "make",
-            "args": [
-                "-j8"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": []
+            "command": "mkdir build;cd build; cmake .. ; cmake --build . --parallel $(nproc); cp ./DipFantasy ..",
+        },
+        {
+            "label": "module_debug",
+            "type": "shell",
+            "command": "cd lib/debug; cmake . ; cmake --build . --parallel $(nproc)",
         }
     ]
 }

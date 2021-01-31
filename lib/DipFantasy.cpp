@@ -1,5 +1,6 @@
 #include <opencv4/opencv2/opencv.hpp>
 #include <DipFantasy.h>
+#define PX_TYPE unsigned short
 using namespace cv;
 uchar *GetPoint(Mat &input, int x, int y)
 {
@@ -60,3 +61,32 @@ void my_convolution(Mat &input, Mat &output)
         }
     }
 }
+/*
+namespace Data
+{
+    class IMG
+    {
+    private:
+        Mat IMG_Mat;
+
+    public:
+        IMG(Mat &OpenCV_Mat);
+        IMG(int height, int wide);
+        ~IMG();
+    };
+
+    IMG::IMG(Mat &OpenCV_Mat)
+    {
+        OpenCV_Mat.copyTo(this->IMG_Mat);
+    }
+    //create a img with
+    IMG::IMG(int height, int wide)
+    {
+    }
+
+    IMG::~IMG()
+    {
+    }
+
+} // namespace Data
+*/

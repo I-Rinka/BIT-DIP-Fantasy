@@ -46,6 +46,16 @@ Mat C = (Mat_<double>(3,3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
     randu(R, Scalar::all(0), Scalar::all(255));
 ```
 
+### 矩阵的复制
+
+```cpp
+Mat F = A.clone();
+Mat G;
+A.copyTo(G);
+```
+
+矩阵`F`和矩阵`G`是矩阵`A`的复制，对其进行修改不会影响矩阵`A`所指向的图像。
+
 ### 矩阵遍历
 
 ```C++
