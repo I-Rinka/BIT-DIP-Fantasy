@@ -1,6 +1,6 @@
 #include <opencv4/opencv2/opencv.hpp>
 #include <DipFantasy.h>
-#define PX_TYPE unsigned short
+#define PX_TYPE uchar
 using namespace cv;
 uchar *GetPoint(Mat &input, int x, int y)
 {
@@ -61,32 +61,107 @@ void my_convolution(Mat &input, Mat &output)
         }
     }
 }
-/*
-namespace Data
+
+namespace DIP_Fantasy
 {
-    class IMG
+    class DF_IMG
     {
     private:
-        Mat IMG_Mat;
+        Mat OCV_Mat;
+        PX_TYPE null_pixel;
+        int row_size;
+        int col_size;
+
+        //改变行数和列数的记录
+        void UpdateSize(int, int);
 
     public:
-        IMG(Mat &OpenCV_Mat);
-        IMG(int height, int wide);
-        ~IMG();
+        DF_IMG(Mat &OpenCV_Mat);
+        DF_IMG(int rows, int cols);
+        ~DF_IMG();
+        void ConvertTo_OpenCV_Mat(Mat &destination);
+
+        void Show();
+
+        Mat GetMat();
+
+        //通过函数的方式减少对对象属性的可能的修改
+        int GetRowSize();
+        int GetColSize();
+
+        //获得对应坐标的点
+        PX_TYPE *GetPoint(int cols, int rows);
     };
 
-    IMG::IMG(Mat &OpenCV_Mat)
+    DF_IMG::DF_IMG(Mat &OpenCV_Mat)
     {
-        OpenCV_Mat.copyTo(this->IMG_Mat);
+        OpenCV_Mat.copyTo(this->OCV_Mat);
+        UpdateSize(this->OCV_Mat.rows, this->OCV_Mat.cols);
     }
     //create a img with
-    IMG::IMG(int height, int wide)
+    DF_IMG::DF_IMG(int rows, int cols)
     {
+        this->OCV_Mat = Mat::zeros(rows, cols, CV_8UC1);
+        UpdateSize(rows, cols);
     }
 
-    IMG::~IMG()
+    DF_IMG::~DF_IMG()
     {
+        OCV_Mat.~Mat();
     }
 
-} // namespace Data
-*/
+    Mat DF_IMG::GetMat()
+    {
+        return this->OCV_Mat;
+    }
+
+    int DF_IMG::GetColSize()
+    {
+        return this->col_size;
+    }
+    int DF_IMG::GetRowSize()
+    {
+        return this->row_size;
+    }
+
+    //更新行列大小
+    void DF_IMG::UpdateSize(int rows, int cols)
+    {
+        this->col_size = cols;
+        this->row_size = rows;
+    }
+
+    void DF_IMG::ConvertTo_OpenCV_Mat(Mat &destination)
+    {
+        this->OCV_Mat.copyTo(destination);
+    }
+    void DF_IMG::Show()
+    {
+        namedWindow("Display Image", WINDOW_AUTOSIZE);
+        imshow("Display Image", this->OCV_Mat); //imshow似乎只能显示整数的
+        waitKey(0);
+    }
+    PX_TYPE *DF_IMG::GetPoint(int rows, int cols)
+    {
+        int row_max = GetRowSize();
+        int col_max = GetColSize();
+        if (rows < 0 || rows >= row_max || cols < 0 || cols >= col_max)
+        {
+            return &this->null_pixel;
+        }
+        uchar *p = this->OCV_Mat.ptr<uchar>(rows);
+
+        return p + cols * this->OCV_Mat.channels();
+    }
+
+} // namespace DIP_Fantasy
+
+using namespace DIP_Fantasy;
+int main(int argc, char const *argv[])
+{
+    Mat input = imread("/home/rinka/Documents/DIP-Fantasy/input/line.png");
+    DF_IMG my_img(input);
+    DF_IMG zeroIMG(200,200);
+    zeroIMG.Show();
+    return 0;
+}

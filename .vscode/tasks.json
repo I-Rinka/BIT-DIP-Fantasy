@@ -6,12 +6,8 @@
         {
             "label": "clean",
             "type": "shell",
-            "command": "rm",
+            "command": "rm -r $(ls -R | grep \"CMake\" | grep  \"/\" | awk '{print substr($0,0,length($0)-1) }')",
             "args": [
-                "cmake_install.cmake",
-                "CMakeCache.txt",
-                "CMakeFiles",
-                "-rf"
             ],
             "group": {
                 "kind": "build",
