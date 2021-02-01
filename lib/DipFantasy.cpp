@@ -1,11 +1,13 @@
 #include <opencv4/opencv2/opencv.hpp>
 #include <DipFantasy.h>
-#define PX_TYPE uchar
+#define PX_TYPE_INT uchar
+#define PX_TYPE_FLOAT float
 using namespace cv;
 //所有可能用到的openCV的操作
 namespace OCV_Util
 {
-    static uchar *GetPoint(Mat &input, int x, int y)
+    template <typename PX_TYPE>
+    static PX_TYPE *GetPoint(Mat &input, int x, int y)
     {
         int row_max = input.rows;
         int col_max = input.cols * input.channels();
@@ -13,11 +15,11 @@ namespace OCV_Util
         {
             return NULL;
         }
-        uchar *p = input.ptr<uchar>(x);
+        PX_TYPE *p = input.ptr<PX_TYPE>(x);
 
         return p + y * input.channels();
     }
-
+    /*
     static void my_convolution(Mat &input, Mat &output)
     {
         int row = input.rows;
@@ -63,7 +65,7 @@ namespace OCV_Util
                 }
             }
         }
-    }
+    }*/
 
 } // namespace OCV_Util
 
@@ -74,14 +76,16 @@ namespace DIP_Fantasy
     enum PREDEFINED_KERNEL
     {
         GaussianKernel,
-        BoxKernel
+        BoxKernel,
+        SobelKernelX,
+        SobelKernelY
     };
     class DF_Mat
     {
     private:
     protected:
         Mat OCV_Mat;
-        PX_TYPE null_pixel;
+        PX_TYPE_INT null_pixel;
         int row_size;
         int col_size;
         void UpdateSize(int, int);
@@ -102,13 +106,11 @@ namespace DIP_Fantasy
     }
     DF_Mat::DF_Mat(/* args */)
     {
-        OCV_Mat.~Mat();
     }
     Mat DF_Mat::GetMat()
     {
         return this->OCV_Mat;
     }
-
     int DF_Mat::GetColSize()
     {
         return this->col_size;
@@ -119,6 +121,7 @@ namespace DIP_Fantasy
     }
     DF_Mat::~DF_Mat()
     {
+        OCV_Mat.~Mat();
     }
 
     class DF_Kernel : public DF_Mat
@@ -128,7 +131,7 @@ namespace DIP_Fantasy
     public:
         DF_Kernel(PREDEFINED_KERNEL kenel_type, int size);
         ~DF_Kernel();
-        double *GetPoint(int rows, int cols);
+        PX_TYPE_FLOAT *GetPoint(int rows, int cols);
         void Show();
     };
 
@@ -173,15 +176,15 @@ namespace DIP_Fantasy
         imshow("Display Kernel", this->OCV_Mat); //imshow似乎只能显示整数的
         cv::waitKey(0);
     }
-    double *DF_Kernel::GetPoint(int rows, int cols)
+    PX_TYPE_FLOAT *DF_Kernel::GetPoint(int rows, int cols)
     {
         int row_max = GetRowSize();
         int col_max = GetColSize();
         if (rows < 0 || rows >= row_max || cols < 0 || cols >= col_max)
         {
-            return (double *)&this->null_pixel;
+            return (PX_TYPE_FLOAT *)&this->null_pixel;
         }
-        double *p = this->OCV_Mat.ptr<double>(rows);
+        PX_TYPE_FLOAT *p = this->OCV_Mat.ptr<PX_TYPE_FLOAT>(rows);
 
         return p + cols * this->OCV_Mat.channels();
     }
@@ -193,26 +196,42 @@ namespace DIP_Fantasy
 
     public:
         DF_IMG(Mat &OpenCV_Mat);
+        //生成空白图，注意size需要是奇数
         DF_IMG(int rows, int cols);
-        //方便构造卷积核，注意size需要是奇数
+        //拷贝构造函数
+        DF_IMG(const DF_IMG &other);
 
         ~DF_IMG();
         void ConvertTo_OpenCV_Mat(Mat &destination);
 
         void Show();
 
-        Mat GetMat();
         void DoConvolution(DF_Kernel kernel);
-
+        void DoMultiply(DF_IMG &mask);
         //重载赋值运算符
         DF_IMG &operator=(DF_IMG other);
-        //拷贝构造函数
-        DF_IMG(const DF_IMG &other);
+        //二维数组怎么重载
 
         //获得对应坐标的点
-        PX_TYPE *GetPoint(int cols, int rows);
+        PX_TYPE_INT *GetPoint(int cols, int rows);
     };
+    void DF_IMG::DoMultiply(DF_IMG &mask)
+    {
 
+        for (int i = 0; i < row_size; i++)
+        {
+            for (int j = 0; j < col_size; j++)
+            {
+                if (this->GetPoint(i, j) != 0)
+                {
+                    if (*mask.GetPoint(i, j) == 0)
+                    {
+                        *this->GetPoint(i, j) = 0;
+                    }
+                }
+            }
+        }
+    }
     //拷贝函数
     DF_IMG &DF_IMG::operator=(DF_IMG other)
     {
@@ -249,11 +268,6 @@ namespace DIP_Fantasy
     {
     }
 
-    Mat DF_IMG::GetMat()
-    {
-        return this->OCV_Mat;
-    }
-
     void DF_IMG::ConvertTo_OpenCV_Mat(Mat &destination)
     {
         this->OCV_Mat.copyTo(destination);
@@ -264,17 +278,17 @@ namespace DIP_Fantasy
         imshow("Display Image", this->OCV_Mat); //imshow似乎只能显示整数的
         waitKey(0);
     }
-    PX_TYPE *DF_IMG::GetPoint(int rows, int cols)
+    PX_TYPE_INT *DF_IMG::GetPoint(int row, int col)
     {
         int row_max = GetRowSize();
         int col_max = GetColSize();
-        if (rows < 0 || rows >= row_max || cols < 0 || cols >= col_max)
+        if (row < 0 || row >= row_max || col < 0 || col >= col_max)
         {
             return &this->null_pixel;
         }
-        uchar *p = this->OCV_Mat.ptr<uchar>(rows);
+        uchar *p = this->OCV_Mat.ptr<uchar>(row);
 
-        return p + cols * this->OCV_Mat.channels();
+        return p + col * this->OCV_Mat.channels();
     }
     void DF_IMG::DoConvolution(DF_Kernel kernel)
     {
@@ -283,8 +297,8 @@ namespace DIP_Fantasy
         int kernel_row = kernel.GetRowSize();
         int kernel_col = kernel.GetColSize();
 
-        int l = -(kernel_row / 2);
-        int u = -(kernel_col / 2);
+        int l = (kernel_row / 2);
+        int u = (kernel_col / 2);
 
         Mat *temp = new Mat;
         this->OCV_Mat.copyTo(*temp);
@@ -292,20 +306,20 @@ namespace DIP_Fantasy
         {
             for (int j = 0; j < col; j++)
             {
-                uchar *now_point = OCV_Util::GetPoint(OCV_Mat, i, j);
+                uchar *now_point = OCV_Util::GetPoint<PX_TYPE_INT>(OCV_Mat, i, j);
                 if (now_point != NULL)
                 {
                     *now_point = 0;
-                    double ans = 0;
-                    for (int i2 = l; i2 < -l + 1; i2++)
+                    int ans = 0;
+                    for (int i2 = -l; i2 < l + 1; i2++)
                     {
-                        for (int j2 = u; j2 < -u + 1; j2++)
+                        for (int j2 = -u; j2 < u + 1; j2++)
                         {
-                            uchar *p = OCV_Util::GetPoint(*temp, i + i2, j + j2);
+                            uchar *p = OCV_Util::GetPoint<PX_TYPE_INT>(*temp, i + i2, j + j2);
                             if (p != NULL)
                             {
                                 double t = (*p);
-                                ans += t * (*kernel.GetPoint(i2 + 1, j2 + 1));
+                                ans += t * (*kernel.GetPoint(i2 + l, j2 + u));
                             }
                         }
                     }
@@ -325,6 +339,117 @@ namespace DIP_Fantasy
         }
 
         delete temp;
+    }
+
+    class DF_RGB_IMG : public DF_IMG
+    {
+    private:
+        /* data */
+    public:
+        enum RGB
+        {
+            B,
+            G,
+            R
+        };
+        DF_RGB_IMG(Mat &OpenCV_Mat);
+        //生成空白图，注意size需要是奇数
+        //
+
+        ~DF_RGB_IMG();
+        //图像相乘
+
+        DF_IMG ToGrey();
+        void DoMultiply(DF_IMG &mask);
+        void DoPlus(DF_IMG &other);
+        void DoPlus(DF_RGB_IMG &other);
+        void DoColorSlicing(PX_TYPE_INT RGB_Value[3], int radius);
+        PX_TYPE_INT *GetPoint(int row, int col, RGB channel);
+    };
+    void DF_RGB_IMG::DoPlus(DF_RGB_IMG &other)
+    {
+        for (int c = 0; c < 3; c++)
+        {
+
+            for (int i = 0; i < row_size; i++)
+            {
+                for (int j = 0; j < col_size; j++)
+                {
+
+                    *this->GetPoint(i, j, (RGB)c) += *other.GetPoint(i, j, (RGB)c);
+                }
+            }
+        }
+    }
+    void DF_RGB_IMG::DoPlus(DF_IMG &other)
+    {
+        for (int c = 0; c < 3; c++)
+        {
+
+            for (int i = 0; i < row_size; i++)
+            {
+                for (int j = 0; j < col_size; j++)
+                {
+
+                    *this->GetPoint(i, j, (RGB)c) += *other.GetPoint(i, j);
+                }
+            }
+        }
+    }
+    DF_IMG DF_RGB_IMG::ToGrey()
+    {
+        Mat grey;
+        cvtColor(this->OCV_Mat, grey, COLOR_RGB2GRAY);
+        return DF_IMG(grey);
+    }
+    PX_TYPE_INT *DF_RGB_IMG::GetPoint(int row, int col, RGB channel)
+    {
+        return DF_IMG::GetPoint(row, col) + channel;
+    }
+    void DF_RGB_IMG::DoColorSlicing(PX_TYPE_INT RGB_Value[3], int radius)
+    {
+        for (int i = 0; i < this->row_size; i++)
+        {
+            for (int j = 0; j < this->col_size; j++)
+            {
+                int l_r = (int)*this->GetPoint(i, j, R) - (int)RGB_Value[0];
+                int l_g = (int)*this->GetPoint(i, j, G) - (int)RGB_Value[1];
+                int l_b = (int)*this->GetPoint(i, j, B) - (int)RGB_Value[2];
+                if ((l_r * l_r + l_b * l_b + l_g * l_g > radius * radius))
+                {
+                    *this->GetPoint(i, j, R) = 0;
+                    *this->GetPoint(i, j, G) = 0;
+                    *this->GetPoint(i, j, B) = 0;
+                }
+            }
+        }
+    }
+    void DF_RGB_IMG::DoMultiply(DF_IMG &mask)
+    {
+        for (int c = 0; c < 3; c++)
+        {
+
+            for (int i = 0; i < row_size; i++)
+            {
+                for (int j = 0; j < col_size; j++)
+                {
+                    if (this->GetPoint(i, j, (RGB)c) != 0)
+                    {
+                        if (*mask.GetPoint(i, j) == 0)
+                        {
+                            *this->GetPoint(i, j, (RGB)c) = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    DF_RGB_IMG::DF_RGB_IMG(Mat &OpenCV_Mat) : DF_IMG(OpenCV_Mat)
+    {
+    }
+
+    DF_RGB_IMG::~DF_RGB_IMG()
+    {
     }
 
 } // namespace DIP_Fantasy
@@ -347,13 +472,11 @@ int main(int argc, char const *argv[])
     */
 
     /*卷积测试
-   */
-
     Mat input = imread("/home/rinka/Documents/DIP-Fantasy/input/class/2.bmp");
     cvtColor(input, input, COLOR_RGB2GRAY);
     printf("%d", input.channels());
     DF_IMG df_img(input);
-    // df_img.Show();
+    df_img.Show();
     DF_Kernel g_kernel(GaussianKernel, 5);
 
     //未来可以优化一下高斯核，让它可以放大的可视化核心
@@ -363,6 +486,54 @@ int main(int argc, char const *argv[])
     //现在卷积不知道为什么出来的全是黑的
     df_img.DoConvolution(g_kernel);
     df_img.Show();
+    //卷积是对的
+   */
+
+    // Mat input = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626726476963805/20.jpg");
+    Mat input = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626718748019090/20.jpg");
+    DF_RGB_IMG rgb(input);
+    // rgb.Show();
+
+    DF_IMG grey = rgb.ToGrey();
+    // grey.Show();
+
+    // rgb.DoMultiply(grey);
+    // rgb.Show();
+
+    DF_IMG zeros(rgb.GetRowSize(), rgb.GetColSize());
+
+    for (int i = 250; i < zeros.GetRowSize(); i++)
+    {
+        for (int j = 0; j < zeros.GetColSize(); j++)
+        {
+            *zeros.GetPoint(i, j) = 1;
+        }
+    }
+    rgb.DoMultiply(zeros);
+
+    //图像相加
+    DF_RGB_IMG white_mask = rgb;
+    DF_RGB_IMG yellow_mask = rgb;
+    PX_TYPE_INT w_rgb[3] = {0xF0, 0xF0, 0xF0};
+    PX_TYPE_INT y_rgb[3] = {0xF5, (0xAC + 0xD4) / 2, (0x6B + 0x74) / 2};
+    white_mask.DoColorSlicing(w_rgb, 50);
+    yellow_mask.DoColorSlicing(y_rgb, 50);
+
+    rgb.DoMultiply(yellow_mask);
+    rgb.DoPlus(white_mask);
+    rgb.Show();
+
+    /*彩图测试、相乘测试
+    for (int i = 0; i < rgb.GetRowSize(); i++)
+    {
+        for (int j = 0; j < rgb.GetColSize(); j++)
+        {
+            // *rgb.GetPoint(i, j, DF_RGB_IMG::R) = 0;
+            *rgb.GetPoint(i, j, DF_RGB_IMG::G) = 0;
+            *rgb.GetPoint(i, j, DF_RGB_IMG::B) = 0;
+        }
+    }
+    */
 
     return 0;
 }

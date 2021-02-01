@@ -22,3 +22,5 @@ make
 ## 流程
 
 滤波平滑->阈值->sobel/canny 总之要把车道线转换为单独的像素->霍夫变换->得到对应检测的线的参数
+
+![image-20210201213204319](https://cdn.jsdelivr.net/gh/I-Rinka/picTure//image-20210201213204319.png)
