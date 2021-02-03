@@ -22,6 +22,12 @@ namespace OCV_Util
         {
             return NULL;
         }
+        if (input.isContinuous())
+        {
+            DF_TYPE *p = input.ptr<DF_TYPE>(0);
+            return p + input.cols * input.channels() * x + y * input.channels();
+        }
+
         DF_TYPE *p = input.ptr<DF_TYPE>(x);
 
         return p + y * input.channels();
@@ -64,6 +70,8 @@ namespace DIP_Fantasy
     }
     DF_Kernel::DF_Kernel(PREDEFINED_KERNEL kernel_type, int size)
     {
+
+        UpdateSize(size, size);
         if (size % 2 == 0)
         {
             printf("error! kernel size should be odd number!\n");
@@ -138,18 +146,34 @@ namespace DIP_Fantasy
 
         else if (kernel_type == BoxKernel)
         {
-            Mat temp = Mat::zeros(size, size, CV_32F);
+            Mat temp = Mat::ones(size, size, CV_32F);
             temp.copyTo(this->OCV_Mat);
-            for (int i = 0; i < size; i++)
+        }
+
+        else if (kernel_type == LineKernelY)
+        {
+
+            int thickness = 2;
+            Mat temp = Mat::zeros(size, size, CV_32F);
+            this->OCV_Mat = temp.clone();
+            DF_TYPE_FLOAT *point;
+            for (int i = 0; i < thickness; i++)
             {
                 for (int j = 0; j < size; j++)
                 {
-                    *GetPoint(i, j) = 1.0;
+                    point = this->GetPoint(j, i);
+                    *point = 1.0;
+                }
+            }
+            for (int i = size - thickness; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    point = this->GetPoint(j, i);
+                    *point = 1.0;
                 }
             }
         }
-
-        UpdateSize(this->OCV_Mat.rows, this->OCV_Mat.cols);
     }
     void DF_Kernel::Show()
     {
@@ -161,15 +185,15 @@ namespace DIP_Fantasy
     }
     DF_TYPE_FLOAT *DF_Kernel::GetPoint(int rows, int cols)
     {
-        int row_max = GetRowSize();
-        int col_max = GetColSize();
-        if (rows < 0 || rows >= row_max || cols < 0 || cols >= col_max)
+        DF_TYPE_FLOAT *p = OCV_Util::GetPoint<DF_TYPE_FLOAT>(this->OCV_Mat, rows, cols);
+        if (p != NULL)
+        {
+            return p;
+        }
+        else
         {
             return (DF_TYPE_FLOAT *)&this->null_pixel;
         }
-        DF_TYPE_FLOAT *p = this->OCV_Mat.ptr<DF_TYPE_FLOAT>(rows);
-
-        return p + cols * this->OCV_Mat.channels();
     }
 
     /********************************************************图像IMG对象*****************************************************/
@@ -360,8 +384,52 @@ namespace DIP_Fantasy
         }
         delete temp;
     }
+    void DF_IMG::DoThreshold(DF_TYPE_INT Threshold)
+    {
+        for (int i = 0; i < this->row_size; i++)
+        {
+            for (int j = 0; j < this->col_size; j++)
+            {
+                DF_TYPE_INT *point = GetPoint(i, j);
+                if (*point <= Threshold)
+                {
+                    *point = 0;
+                }
+            }
+        }
+    }
     void DF_IMG::DoErosion(DF_Kernel kernel, DF_TYPE_INT Threshold)
     {
+        int kernel_row = kernel.GetRowSize();
+        int kernel_col = kernel.GetColSize();
+        int l = kernel_row / 2;
+        int u = kernel_col / 2;
+        Mat *temp = new Mat;
+        this->OCV_Mat.copyTo(*temp);
+        for (int c = 0; c < this->OCV_Mat.channels(); c++)
+        {
+            for (int i = 0; i < row_size; i++)
+            {
+                for (int j = 0; j < col_size; j++)
+                {
+                    for (int i2 = -l; i2 < l + 1; i2++)
+                    {
+                        for (int j2 = -u; j2 < u + 1; j2++)
+                        {
+                            DF_TYPE_INT *p = OCV_Util::GetPoint<DF_TYPE_INT>(*temp, i + i2, j + j2) + c;
+                            if (*kernel.GetPoint(i2 + l, j2 + u) > 0 && p != NULL && *p < Threshold)
+                            {
+                                *GetPoint(i, j) = 0;
+                                goto next_pixel;
+                            }
+                        }
+                    }
+                    *GetPoint(i, j) = 255;
+                next_pixel:;
+                }
+            }
+        }
+        delete temp;
     }
     void DF_IMG::DoDilation(DF_Kernel kernel, DF_TYPE_INT Threshold)
     {
@@ -385,7 +453,6 @@ namespace DIP_Fantasy
                             if (p != NULL && *p > Threshold && *kernel.GetPoint(i2 + l, j2 + u) > 0)
                             {
                                 *GetPoint(i, j) = 255;
-                                double t = (*p);
                                 goto next_pixel;
                             }
                         }
@@ -419,6 +486,20 @@ namespace DIP_Fantasy
                 {
 
                     *this->GetPoint(i, j, (RGB)c) += *other.GetPoint(i, j, (RGB)c);
+                }
+            }
+        }
+    }
+    void DF_RGB_IMG::DoThreshold(DF_TYPE_INT Threshold, RGB channel)
+    {
+        for (int i = 0; i < this->row_size; i++)
+        {
+            for (int j = 0; j < this->col_size; j++)
+            {
+                DF_TYPE_INT *point = GetPoint(i, j, channel);
+                if (*point <= Threshold)
+                {
+                    *point = 0;
                 }
             }
         }
@@ -490,20 +571,20 @@ namespace DIP_Fantasy
     {
     }
 
-    DF_IMG ShiftIMG(DF_IMG &source, int row_up, int col_left)
+    void DoShiftIMG(DF_IMG &source, int row_up, int col_left)
     {
-        DF_IMG rt_val(source.GetRowSize(), source.GetColSize());
+        // DF_IMG rt_val(source.GetRowSize(), source.GetColSize());
         for (int c = 0; c < source.GetMat().channels(); c++)
         {
             for (int i = 0; i < source.GetRowSize(); i++)
             {
                 for (int j = 0; j < source.GetColSize(); j++)
                 {
-                    *rt_val.GetPoint(i, j) = *source.GetPoint(i + row_up, j + col_left);
+                    *source.GetPoint(i, j) = *source.GetPoint(i + row_up, j + col_left);
                 }
             }
         }
-        return rt_val;
+        // return rt_val;
     }
     DF_RGB_IMG ShiftIMG(DF_RGB_IMG &source, int row_up, int col_left)
     {
@@ -705,6 +786,7 @@ namespace DIP_Fantasy
             node_queue.push(*cursor);
             cursor = cursor->next_node;
         }
+        delete this->hough_mat;
     }
 
     HoughTransition::~HoughTransition()

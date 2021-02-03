@@ -25,7 +25,8 @@ namespace DIP_Fantasy
         BoxKernel,
         SobelKernelX,
         SobelKernelY,
-        DonutsKernel
+        DonutsKernel,
+        LineKernelY
     };
     class DF_Mat
     {
@@ -78,6 +79,7 @@ namespace DIP_Fantasy
         void DoDilation(DF_Kernel kernel, DF_TYPE_INT Threshold);
         void DoMultiply(DF_IMG &mask);
         void DoPlus(DF_IMG &other);
+        void DoThreshold(DF_TYPE_INT Threshold);
         void DoHistEqualization();
         int *GetHisgram();
         //重载赋值运算符
@@ -112,11 +114,12 @@ namespace DIP_Fantasy
         void DoPlus(DF_IMG &other);
         void DoPlus(DF_RGB_IMG &other);
         void DoColorEnhancement(int map[256], RGB channel);
-        void DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius);
+        void DoThreshold(DF_TYPE_INT Threshold, RGB channel);
         DF_TYPE_INT *GetPoint(int row, int col, RGB channel);
+        void DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius);
     };
 
-    DF_IMG ShiftIMG(DF_IMG &source, int row_up, int col_left);
+    void DoShiftIMG(DF_IMG &source, int row_up, int col_left);
     DF_RGB_IMG ShiftIMG(DF_RGB_IMG &source, int row_up, int col_left);
     void DrawLineToImage(DF_IMG &input, int radius, int theta);
     struct HoughSon
@@ -148,6 +151,7 @@ namespace DIP_Fantasy
         void DeleteSon(HoughSon *cursor);
     };
 
+    bool operator<(HoughNode a, HoughNode b);
     class HoughTransition
     {
     private:
