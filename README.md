@@ -80,7 +80,7 @@ python3 ./judge.py ./predict.json ./groundtruth.json
   - [x] 图像读入
   - [x] 高斯滤波
   - [x] 颜色切割
-  - [ ] 直方图均衡（彩色，三通道）
+  - [x] 直方图均衡（彩色，三通道）
 - [x] 梯度运算
   - [x] sobel
   - [ ] sobel单线化（舍弃右边，只要左边）
@@ -88,12 +88,12 @@ python3 ./judge.py ./predict.json ./groundtruth.json
   - [x] 乘法（图像屏蔽）
   - [x] 加法（构造mask）
   - [ ] 形态学运算
-- [ ] 霍夫变换
-- [ ] 直线筛选
+- [x] 霍夫变换
+- [x] 直线筛选
 
 整体流程：
 
-- [ ] 造库
+- [x] 造库
 - [ ] 编程
 - [x] 评测机研究
 - [ ] 实验报告

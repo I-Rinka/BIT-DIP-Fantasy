@@ -1,3 +1,5 @@
+#ifndef __DIP_FANTASY__
+#define __DIP_FANTASY__
 #include <opencv4/opencv2/opencv.hpp>
 #include <DipFantasy.h>
 #include <math.h>
@@ -7,7 +9,7 @@ using namespace std;
 #define DF_TYPE_INT uchar
 #define DF_TYPE_FLOAT float
 using namespace cv;
-
+using namespace DIP_Fantasy;
 //所有可能用到的openCV的操作
 namespace OCV_Util
 {
@@ -24,53 +26,6 @@ namespace OCV_Util
 
         return p + y * input.channels();
     }
-    /*
-    static void my_convolution(Mat &input, Mat &output)
-    {
-        int row = input.rows;
-        int col = input.cols;
-
-        // int kernel[3][3] = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
-        int kernel[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
-
-        input.copyTo(output);
-
-        for (int i = 0; i < row; i++)
-        {
-            for (int j = 0; j < col; j++)
-            {
-                uchar *now_point = GetPoint(output, i, j);
-                if (now_point != NULL)
-                {
-                    *now_point = 0;
-                    int ans = 0;
-                    for (int i2 = -1; i2 < 2; i2++)
-                    {
-                        for (int j2 = -1; j2 < 2; j2++)
-                        {
-                            uchar *p = GetPoint(input, i + i2, j + j2);
-                            if (p != NULL)
-                            {
-                                int t = (*p);
-                                ans += t * kernel[i2 + 1][j2 + 1];
-                            }
-                        }
-                    }
-
-                    if (ans >= 255 || ans <= -256)
-                    {
-                        ans = 255;
-                    }
-                    if (ans <= 0)
-                    {
-                        ans = -ans;
-                    }
-
-                    *now_point = (uchar)(ans);
-                }
-            }
-        }
-    }*/
 
 } // namespace OCV_Util
 
@@ -78,31 +33,7 @@ namespace OCV_Util
 
 namespace DIP_Fantasy
 {
-    enum PREDEFINED_KERNEL
-    {
-        GaussianKernel,
-        BoxKernel,
-        SobelKernelX,
-        SobelKernelY,
-        DonutsKernel
-    };
-    class DF_Mat
-    {
-    private:
-    protected:
-        Mat OCV_Mat;
-        DF_TYPE_INT null_pixel;
-        int row_size;
-        int col_size;
-        void UpdateSize(int, int);
-
-    public:
-        ~DF_Mat();
-        int GetColSize();
-        int GetRowSize();
-        Mat GetMat();
-        void Show();
-    };
+    /********************************************************矩阵Mat对象*****************************************************/
     //更新行列大小
     void DF_Mat::UpdateSize(int rows, int cols)
     {
@@ -127,17 +58,7 @@ namespace DIP_Fantasy
         OCV_Mat.~Mat();
     }
 
-    class DF_Kernel : public DF_Mat
-    {
-    private:
-        /* data */
-    public:
-        DF_Kernel(PREDEFINED_KERNEL kenel_type, int size);
-        ~DF_Kernel();
-        DF_TYPE_FLOAT *GetPoint(int rows, int cols);
-        void Show();
-    };
-
+    /********************************************************卷积核Kernel对象*****************************************************/
     DF_Kernel::~DF_Kernel()
     {
     }
@@ -251,35 +172,7 @@ namespace DIP_Fantasy
         return p + cols * this->OCV_Mat.channels();
     }
 
-    class DF_IMG : public DF_Mat
-    {
-    private:
-        //改变行数和列数的记录
-
-    public:
-        DF_IMG(Mat &OpenCV_Mat);
-        //生成空白图，注意size需要是奇数
-        DF_IMG(int rows, int cols);
-        //拷贝构造函数
-        DF_IMG(const DF_IMG &other);
-
-        ~DF_IMG();
-        void ConvertTo_OpenCV_Mat(Mat &destination);
-
-        void Show();
-
-        void DoConvolution(DF_Kernel kernel);
-        void DoErosion(DF_Kernel kernel, DF_TYPE_INT Threshold);
-        void DoDilation(DF_Kernel kernel, DF_TYPE_INT Threshold);
-        void DoMultiply(DF_IMG &mask);
-        void DoPlus(DF_IMG &other);
-        //重载赋值运算符
-        DF_IMG &operator=(DF_IMG other);
-        //二维数组怎么重载
-
-        //获得对应坐标的点
-        DF_TYPE_INT *GetPoint(int cols, int rows);
-    };
+    /********************************************************图像IMG对象*****************************************************/
     void DF_IMG::DoMultiply(DF_IMG &mask)
     {
 
@@ -304,7 +197,54 @@ namespace DIP_Fantasy
         UpdateSize(this->OCV_Mat.rows, this->OCV_Mat.cols);
         return *this;
     }
+    int *DF_IMG::GetHisgram()
+    {
+        int *hist = (int *)calloc(256, sizeof(int));
 
+        for (int i = 0; i < this->GetRowSize(); i++)
+        {
+            for (int j = 0; j < this->GetColSize(); j++)
+            {
+                int sum = 0;
+                for (int c = 0; c < 3; c++)
+                {
+                    sum += *(this->GetPoint(i, j) + c);
+                }
+                hist[sum / 3]++;
+            }
+        }
+        return hist;
+    }
+    void DF_IMG::DoHistEqualization()
+    {
+        for (int c = 0; c < 3; c++)
+        {
+
+            DF_TYPE_INT map[256];
+            long long hist[256] = {0};
+            for (int i = 0; i < this->GetRowSize(); i++)
+            {
+                for (int j = 0; j < this->GetColSize(); j++)
+                {
+                    hist[*(this->GetPoint(i, j) + c)]++;
+                }
+            }
+            long long num = 0;
+            for (int i = 0; i < 256; i++)
+            {
+                num += hist[i];
+                double val = ((double)num / (double)(this->GetColSize() * this->GetRowSize())) * 255;
+                map[i] = (DF_TYPE_INT)val;
+            }
+            for (int i = 0; i < this->GetRowSize(); i++)
+            {
+                for (int j = 0; j < this->GetColSize(); j++)
+                {
+                    *(this->GetPoint(i, j) + c) = map[*(this->GetPoint(i, j) + c)];
+                }
+            }
+        }
+    }
     //拷贝构造函数
     DF_IMG::DF_IMG(const DF_IMG &other)
     {
@@ -456,32 +396,18 @@ namespace DIP_Fantasy
         }
         delete temp;
     }
-    class DF_RGB_IMG : public DF_IMG
+
+    /********************************************************彩图RGB_IMG对象*****************************************************/
+    void DF_RGB_IMG::DoColorEnhancement(int map[256], RGB channel)
     {
-    private:
-        /* data */
-    public:
-        enum RGB
+        for (int i = 0; i < this->GetRowSize(); i++)
         {
-            B,
-            G,
-            R
-        };
-        DF_RGB_IMG(Mat &OpenCV_Mat);
-        //生成空白图，注意size需要是奇数
-        //
-
-        ~DF_RGB_IMG();
-        //图像相乘
-
-        DF_IMG ToGrey();
-        DF_RGB_IMG &operator=(DF_RGB_IMG other);
-        void DoMultiply(DF_IMG &mask);
-        void DoPlus(DF_IMG &other);
-        void DoPlus(DF_RGB_IMG &other);
-        void DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius);
-        DF_TYPE_INT *GetPoint(int row, int col, RGB channel);
-    };
+            for (int j = 0; j < this->GetColSize(); j++)
+            {
+                *(this->GetPoint(i, j, channel)) = map[*(this->GetPoint(i, j, channel))];
+            }
+        }
+    }
     void DF_RGB_IMG::DoPlus(DF_RGB_IMG &other)
     {
         for (int c = 0; c < 3; c++)
@@ -595,7 +521,6 @@ namespace DIP_Fantasy
         return rt_val;
     }
 
-    DF_IMG test(1000, 10000);
     void DrawLineToImage(DF_IMG &input, int radius, int theta)
     {
         int print_val = 255;
@@ -609,125 +534,87 @@ namespace DIP_Fantasy
         }
     }
 
-    struct HoughSon
+    void HoughNode::InsertSon(int son_theta, int son_radius, int son_hough_value)
     {
-        int theta = 0;
-        int radius = 0;
-        int hough_value = 0;
-        HoughSon *next_son;
-    };
-    struct HoughNode
+        HoughSon *new_son = new HoughSon;
+        this->hough_value_sum += son_hough_value;
+        new_son->next_son = NULL;
+        new_son->theta = son_theta;
+        new_son->radius = son_radius;
+        new_son->hough_value = son_hough_value;
+        if (son_hough_value > this->son_max_hough_value)
+        {
+            this->son_max_hough_value = son_hough_value;
+            this->theta_average = son_theta;
+            this->theta_average = son_radius;
+        }
+        if (this->son == NULL)
+        {
+            this->son = new_son;
+        }
+        else
+        {
+            HoughSon *cursor = this->son;
+            while (cursor->next_son != NULL)
+            {
+                cursor = cursor->next_son;
+            }
+            cursor->next_son = new_son;
+        }
+    }
+    HoughNode::HoughNode(const HoughNode &other)
     {
-    public:
-        int this_hough_value = 0;
-        long long hough_value_sum = 0;
-        int theta = 0;
-        int radius = 0;
-        int hit_count = 1;
-        double theta_average = 0;
-        double radius_average = 0;
-        HoughNode *next_node;
-        HoughSon *son;
-        void InsertSon(int son_theta, int son_radius, int son_hough_value)
-        {
-            HoughSon *new_son = new HoughSon;
-            this->hough_value_sum += son_hough_value;
-            new_son->next_son = NULL;
-            new_son->theta = son_theta;
-            new_son->radius = son_radius;
-            new_son->hough_value = son_hough_value;
-            if (son_hough_value > this->son_max_hough_value)
-            {
-                this->son_max_hough_value = son_hough_value;
-                this->theta_average = son_theta;
-                this->theta_average = son_radius;
-            }
-            if (this->son == NULL)
-            {
-                this->son = new_son;
-            }
-            else
-            {
-                HoughSon *cursor = this->son;
-                while (cursor->next_son != NULL)
-                {
-                    cursor = cursor->next_son;
-                }
-                cursor->next_son = new_son;
-            }
-        }
-        HoughNode(const HoughNode &other)
-        {
-            // other = *this;
-            *this = other;
-            this->son = NULL; //防止double free，直接把孩子节点给删除掉
-        }
-        HoughNode(int hough_value, int theta, int radius)
-        {
-            this->hough_value_sum = hough_value;
-            this->this_hough_value = hough_value;
-            this->son_max_hough_value = hough_value;
+        // other = *this;
+        *this = other;
+        this->son = NULL; //防止double free，直接把孩子节点给删除掉
+    }
+    HoughNode::HoughNode(int hough_value, int theta, int radius)
+    {
+        this->hough_value_sum = hough_value;
+        this->this_hough_value = hough_value;
+        this->son_max_hough_value = hough_value;
 
-            this->theta = theta;
-            this->radius = radius;
-            this->theta_average = theta;
-            this->radius_average = radius;
-            this->hit_count = 1;
-            this->next_node = NULL;
-            this->son = NULL;
-        }
-        ~HoughNode()
-        {
-            DeleteSon(this->son);
-        }
+        this->theta = theta;
+        this->radius = radius;
+        this->theta_average = theta;
+        this->radius_average = radius;
+        this->hit_count = 1;
+        this->next_node = NULL;
+        this->son = NULL;
+    }
+    HoughNode::~HoughNode()
+    {
+        DeleteSon(this->son);
+    }
 
-    private:
-        int son_max_hough_value;
-        void DeleteSon(HoughSon *cursor)
+    void HoughNode::DeleteSon(HoughSon *cursor)
+    {
+        if (cursor == NULL)
         {
-            if (cursor == NULL)
-            {
-                return;
-            }
-            DeleteSon(cursor->next_son);
-
-            delete cursor;
+            return;
         }
-    };
+        DeleteSon(cursor->next_son);
+
+        delete cursor;
+    }
 
     bool operator<(HoughNode a, HoughNode b)
     {
         return a.hough_value_sum < b.hough_value_sum;
     }
-    class HoughTransition
-    {
-    private:
-        int *hough_mat;
-        int max_rc_size;
-        int diag_size;
-        int row_size;
-        int col_size;
-        int null_point;
-        HoughNode *hough_HEAD = NULL;
-        /* data */
-        int *GetHoughPoint(int theta, int radius)
-        {
-            if (theta > 180 || theta < -90 || radius < -diag_size || radius > diag_size)
-            {
-                printf("ouch!");
-                return &this->null_point;
-            }
 
-            // return this->hough_mat + (90 + 180 + 1) * (radius + diag_size) + (theta + 90);
-            return this->hough_mat + (theta + 90) * (2 * diag_size + 1) + radius + diag_size;
+    int *HoughTransition::GetHoughPoint(int theta, int radius)
+    {
+        if (theta > 180 || theta < -90 || radius < -diag_size || radius > diag_size)
+        {
+            printf("ouch!");
+            return &this->null_point;
         }
 
-    public:
-        priority_queue<HoughNode> node_queue;
-        HoughTransition(DF_IMG input, DF_TYPE_INT Threshold);
-        ~HoughTransition();
-        int line_number = 0;
-    };
+        // return this->hough_mat + (90 + 180 + 1) * (radius + diag_size) + (theta + 90);
+        return this->hough_mat + (theta + 90) * (2 * diag_size + 1) + radius + diag_size;
+    }
+
     HoughTransition::HoughTransition(DF_IMG input, DF_TYPE_INT Threshold)
     {
         int radius_range = 100;
@@ -827,53 +714,4 @@ namespace DIP_Fantasy
 
 } // namespace DIP_Fantasy
 
-using namespace DIP_Fantasy;
-
-int main(int argc, char const *argv[])
-{
-    /*
-    测试项目:
-    + 构造，析构，拷贝函数
-    + 卷积
-    + 相乘
-    + 相加
-    + Sobel
-    + 平移
-    */
-
-    Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626388446057821/20.jpg");
-    DF_RGB_IMG input(image);
-
-    input.Show();
-
-    int color_radius = 50;
-    DF_TYPE_INT rgb_y[3] = {0xFE, 0xD1, 0x86};
-    DF_TYPE_INT rgb_w[3] = {0xF0, 0xF0, 0xF0};
-    DF_RGB_IMG w_mask = input;
-    DF_RGB_IMG y_mask = input;
-
-    w_mask.DoColorSlicing(rgb_w, color_radius);
-    y_mask.DoColorSlicing(rgb_y, color_radius);
-
-    w_mask.DoPlus(y_mask);
-
-    DF_IMG mask = w_mask.ToGrey();
-    for (int i = 0; i < 160; i++)
-    {
-        for (int j = 0; j < mask.GetColSize(); j++)
-        {
-            *mask.GetPoint(i, j) = 0;
-        }
-    }
-    mask.Show();
-    HoughTransition HT(mask, 50);
-    for (int i = 0; i < 5; i++)
-    {
-        HoughNode line = HT.node_queue.top();
-        DrawLineToImage(mask, line.radius_average, line.theta_average);
-
-        HT.node_queue.pop();
-    }
-
-    mask.Show();
-}
+#endif
