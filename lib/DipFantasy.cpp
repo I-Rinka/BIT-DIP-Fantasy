@@ -618,8 +618,9 @@ namespace DIP_Fantasy
     };
     struct HoughNode
     {
+    public:
         int this_hough_value = 0;
-        long long hough_value = 0;
+        long long hough_value_sum = 0;
         int theta = 0;
         int radius = 0;
         int hit_count = 1;
@@ -627,11 +628,76 @@ namespace DIP_Fantasy
         double radius_average = 0;
         HoughNode *next_node;
         HoughSon *son;
+        void InsertSon(int son_theta, int son_radius, int son_hough_value)
+        {
+            HoughSon *new_son = new HoughSon;
+            this->hough_value_sum += son_hough_value;
+            new_son->next_son = NULL;
+            new_son->theta = son_theta;
+            new_son->radius = son_radius;
+            new_son->hough_value = son_hough_value;
+            if (son_hough_value > this->son_max_hough_value)
+            {
+                this->son_max_hough_value = son_hough_value;
+                this->theta_average = son_theta;
+                this->theta_average = son_radius;
+            }
+            if (this->son == NULL)
+            {
+                this->son = new_son;
+            }
+            else
+            {
+                HoughSon *cursor = this->son;
+                while (cursor->next_son != NULL)
+                {
+                    cursor = cursor->next_son;
+                }
+                cursor->next_son = new_son;
+            }
+        }
+        HoughNode(const HoughNode &other)
+        {
+            // other = *this;
+            *this = other;
+            this->son = NULL; //防止double free，直接把孩子节点给删除掉
+        }
+        HoughNode(int hough_value, int theta, int radius)
+        {
+            this->hough_value_sum = hough_value;
+            this->this_hough_value = hough_value;
+            this->son_max_hough_value = hough_value;
+
+            this->theta = theta;
+            this->radius = radius;
+            this->theta_average = theta;
+            this->radius_average = radius;
+            this->hit_count = 1;
+            this->next_node = NULL;
+            this->son = NULL;
+        }
+        ~HoughNode()
+        {
+            DeleteSon(this->son);
+        }
+
+    private:
+        int son_max_hough_value;
+        void DeleteSon(HoughSon *cursor)
+        {
+            if (cursor == NULL)
+            {
+                return;
+            }
+            DeleteSon(cursor->next_son);
+
+            delete cursor;
+        }
     };
 
     bool operator<(HoughNode a, HoughNode b)
     {
-        return a.hough_value < b.hough_value;
+        return a.hough_value_sum < b.hough_value_sum;
     }
     class HoughTransition
     {
@@ -712,14 +778,7 @@ namespace DIP_Fantasy
                         //首个节点
                         if (hough_HEAD == NULL)
                         {
-                            HoughNode *new_node = new HoughNode;
-                            new_node->this_hough_value = point_value;
-                            new_node->next_node = NULL;
-                            new_node->radius = i;
-                            new_node->theta = j;
-                            new_node->hough_value = point_value;
-                            new_node->son = NULL;
-
+                            HoughNode *new_node = new HoughNode(point_value, j, i);
                             hough_HEAD = new_node;
                             break;
                         }
@@ -730,41 +789,15 @@ namespace DIP_Fantasy
                             break;
                         }
                         //放子节点
-                        if ((cursor->radius - i <= radius_range && cursor->radius - i >= -radius_range) && (cursor->theta - j <= theta_range && cursor->theta - j >= -theta_range))
+                        if ((cursor->radius_average - i <= radius_range && cursor->radius_average - i >= -radius_range) && (cursor->theta_average - j <= theta_range && cursor->theta_average - j >= -theta_range))
                         {
-                            cursor->hough_value += point_value;
-                            cursor->hit_count++;
-                            HoughSon *new_son = new HoughSon;
-                            new_son->next_son = NULL;
-                            new_son->radius = i;
-                            new_son->theta = j;
-                            new_son->hough_value = point_value;
-                            //建立第一个子
-                            if (cursor->son == NULL)
-                            {
-                                cursor->son = new_son;
-                            }
-                            else
-                            {
-                                HoughSon *son_cursor = cursor->son;
-                                while (son_cursor->next_son != NULL)
-                                {
-                                    son_cursor = son_cursor->next_son;
-                                }
-                                son_cursor->next_son = new_son;
-                            }
+                            cursor->InsertSon(j, i, point_value);
                             break;
                         }
                         //建立新节点
                         else if (cursor->next_node == NULL)
                         {
-                            HoughNode *new_node = new HoughNode;
-                            new_node->this_hough_value = point_value;
-                            new_node->next_node = NULL;
-                            new_node->radius = i;
-                            new_node->theta = j;
-                            new_node->hough_value = point_value;
-                            new_node->son = NULL;
+                            HoughNode *new_node = new HoughNode(point_value, j, i);
                             cursor->next_node = new_node;
                             break;
                         }
@@ -782,59 +815,9 @@ namespace DIP_Fantasy
             {
                 break;
             }
-            HoughSon *cursor_son = cursor->son;
-            // double radius = cursor->radius;
-            // double theta = cursor->theta;
-            int max = cursor->this_hough_value;
-            cursor->radius_average = cursor->radius;
-            cursor->theta_average = cursor->theta;
-            while (true)
-            {
-                if (cursor_son == NULL)
-                {
-                    break;
-                }
-                if (cursor_son->hough_value > max)
-                {
-                    max = cursor_son->hough_value;
-                    cursor->radius_average = cursor_son->radius;
-                    cursor->theta_average = cursor_son->theta;
-                }
-                // radius += cursor->radius;
-                // theta += cursor->theta;
-                cursor_son = cursor_son->next_son;
-            }
-            // cursor->radius_average = radius / cursor->hit_count;
-            // cursor->theta_average = theta / cursor->hit_count;
             node_queue.push(*cursor);
             cursor = cursor->next_node;
         }
-        // this->line_number = node_queue.size();
-        // if (this->line_number > 5)
-        // {
-        //     this->line_number = 5;
-        // }
-        // this->line = (Line *)malloc(this->line_number * sizeof(Line));
-        // for (int i = 0; i < this->line_number; i++)
-        // {
-        //     HoughNode now = node_queue.top();
-        //     double radius = now.radius;
-        //     double theta = now.theta;
-        //     HoughSon *cursor = now.son;
-        //     while (true)
-        //     {
-        //         if (cursor == NULL)
-        //         {
-        //             break;
-        //         }
-        //         radius += cursor->radius;
-        //         theta += cursor->theta;
-        //         cursor = cursor->next_son;
-        //     }
-        //     this->line[i].radius = radius / now.hit_count;
-        //     this->line[i].theta = theta / now.hit_count;
-        //     node_queue.pop();
-        // }
     }
 
     HoughTransition::~HoughTransition()
@@ -858,9 +841,11 @@ int main(int argc, char const *argv[])
     + 平移
     */
 
-    /*流程测试
     Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626388446057821/20.jpg");
     DF_RGB_IMG input(image);
+
+    input.Show();
+
     int color_radius = 50;
     DF_TYPE_INT rgb_y[3] = {0xFE, 0xD1, 0x86};
     DF_TYPE_INT rgb_w[3] = {0xF0, 0xF0, 0xF0};
@@ -880,37 +865,15 @@ int main(int argc, char const *argv[])
             *mask.GetPoint(i, j) = 0;
         }
     }
-
+    mask.Show();
     HoughTransition HT(mask, 50);
-
-    DF_IMG output(mask.GetRowSize(), mask.GetColSize());
-
-    for (int i = 0; i < HT.line_number; i++)
+    for (int i = 0; i < 5; i++)
     {
-        cout << "radius:" << HT.line[i].radius << " theta:" << HT.line[i].theta << endl;
-        DrawLineToImage(mask, HT.line[i].radius, HT.line[i].theta);
-    }
-    */
+        HoughNode line = HT.node_queue.top();
+        DrawLineToImage(mask, line.radius_average, line.theta_average);
 
-    Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/line.png");
-    cvtColor(image, image, COLOR_RGB2GRAY);
-    DF_IMG grey(image);
-    // grey.Show();
-
-    HoughTransition HT(grey, 50);
-    DF_IMG output(grey.GetRowSize(), grey.GetColSize());
-    test = grey;
-
-    for (int i = 0; i < 4; i++)
-    {
-        HoughNode now = HT.node_queue.top();
-        cout << "radius:" << now.radius_average << " theta:" << now.theta_average<<" value:"<<now.hough_value << endl;
-        DrawLineToImage(grey, now.radius_average, now.theta_average);
         HT.node_queue.pop();
     }
 
-    // DrawLineToImage(grey, 461, 24); //draw是没问题的
-    grey.Show();
-
-    //radius:461 theta:24
+    mask.Show();
 }
