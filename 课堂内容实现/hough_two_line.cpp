@@ -1,4 +1,4 @@
-#include <DipFantasy.h>
+// #include <DipFantasy.h>
 #include <opencv4/opencv2/opencv.hpp>
 #include <stdio.h>
 #include <math.h>
@@ -9,6 +9,18 @@
 
 using namespace cv;
 
+static uchar *GetPoint1(Mat &input, int x, int y)
+{
+    int row_max = input.rows;
+    int col_max = input.cols * input.channels();
+    if (x < 0 || x >= row_max || y < 0 || y >= col_max)
+    {
+        return NULL;
+    }
+    uchar *p = input.ptr<uchar>(x);
+
+    return p + y * input.channels();
+}
 //极坐标下的霍夫变换，霍夫变换中的一个点就对应直角坐标系中的一根线
 class Hough_Fantasy
 {
@@ -64,10 +76,10 @@ void Hough_Fantasy::PrintLineToImage(Mat &input, int p, int theta, int val)
         {
             for (int j2 = -3; j2 < 3; j2++)
             {
-                uchar *point = GetPoint(input, i + i2, y + j2);
+                uchar *point = GetPoint1(input, i + i2, y + j2);
                 if (point != NULL)
                 {
-                    *point = val;//*(point+3)可以单独改红色的坐标,因为GetPoint已经乘了Channel
+                    *point = val; //*(point+3)可以单独改红色的坐标,因为GetPoint已经乘了Channel
                 }
             }
         }
@@ -169,7 +181,7 @@ void Hough_Fantasy::DoHoughTransition()
         for (int j = 0; j < this->input_mat.cols; j++)
         {
             //遍历目标图像
-            uchar *p = GetPoint(this->input_mat, i, j);
+            uchar *p = GetPoint1(this->input_mat, i, j);
             if (p != NULL)
             {
                 //如果p的值大于阈值，则送去做霍夫
@@ -207,7 +219,7 @@ void myThreshold(Mat &input, Mat &output, int val)
     {
         for (int j = 0; j < input.cols; j++)
         {
-            uchar *point = GetPoint(input, i, j);
+            uchar *point = GetPoint1(input, i, j);
             if (point != NULL)
             {
                 if (*point >= val)
@@ -225,12 +237,12 @@ void myThreshold(Mat &input, Mat &output, int val)
 
 int main(int argc, char const *argv[])
 {
-    Mat image = imread("line.png", 1);
+    Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/line.png", 1);
 
     cvtColor(image, image, COLOR_RGB2GRAY);
 
     Mat temp;
-    myThreshold(image,temp,150);
+    myThreshold(image, temp, 150);
 
     namedWindow("Display", WINDOW_AUTOSIZE);
     imshow("Display", temp);
