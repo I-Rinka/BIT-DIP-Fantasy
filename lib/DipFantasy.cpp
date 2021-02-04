@@ -22,6 +22,7 @@ namespace OCV_Util
         {
             return NULL;
         }
+
         if (input.isContinuous())
         {
             DF_TYPE *p = input.ptr<DF_TYPE>(0);
@@ -92,6 +93,21 @@ namespace DIP_Fantasy
             k_size.height = size;
             k_size.width = size;
             GaussianBlur(this->OCV_Mat, this->OCV_Mat, k_size, 0.3 * ((size - 1) * 0.5 - 1) + 0.8);
+            double avg = 0;
+            for (int i = 0; i < this->OCV_Mat.rows; i++)
+            {
+                for (int j = 0; j < this->OCV_Mat.cols; j++)
+                {
+                    avg += *OCV_Util::GetPoint<DF_TYPE_FLOAT>(this->OCV_Mat, i, j);
+                }
+            }
+            for (int i = 0; i < this->OCV_Mat.rows; i++)
+            {
+                for (int j = 0; j < this->OCV_Mat.cols; j++)
+                {
+                    *OCV_Util::GetPoint<DF_TYPE_FLOAT>(this->OCV_Mat, i, j) *= (1 / avg);
+                }
+            }
         }
         else if (kernel_type == DonutsKernel)
         {
@@ -148,6 +164,13 @@ namespace DIP_Fantasy
         {
             Mat temp = Mat::ones(size, size, CV_32F);
             temp.copyTo(this->OCV_Mat);
+            for (int i = 0; i < this->OCV_Mat.rows; i++)
+            {
+                for (int j = 0; j < this->OCV_Mat.cols; j++)
+                {
+                    *OCV_Util::GetPoint<DF_TYPE_FLOAT>(this->OCV_Mat, i, j) /= (size * size);
+                }
+            }
         }
 
         else if (kernel_type == LineKernelY)
@@ -342,47 +365,45 @@ namespace DIP_Fantasy
         int l = (kernel_row / 2);
         int u = (kernel_col / 2);
 
-        Mat *temp = new Mat;
-        this->OCV_Mat.copyTo(*temp);
-        for (int c = 0; c < this->OCV_Mat.channels(); c++)
+        Mat temp = OCV_Mat.clone();
+        for (int i = 0; i < row; i++)
         {
-            for (int i = 0; i < row; i++)
+            for (int j = 0; j < col; j++)
             {
-                for (int j = 0; j < col; j++)
+                DF_TYPE_INT *now_point = OCV_Util::GetPoint<DF_TYPE_INT>(OCV_Mat, i, j);
+                if (now_point != NULL)
                 {
-                    DF_TYPE_INT *now_point = OCV_Util::GetPoint<DF_TYPE_INT>(OCV_Mat, i, j) + c;
-                    if (now_point != NULL)
+                    for (int c = 0; c < OCV_Mat.channels(); c++)
                     {
-                        *now_point = 0;
-                        int ans = 0;
+                        *(now_point + c) = 0;
+                        double ans = 0;
                         for (int i2 = -l; i2 < l + 1; i2++)
                         {
                             for (int j2 = -u; j2 < u + 1; j2++)
                             {
-                                DF_TYPE_INT *p = OCV_Util::GetPoint<DF_TYPE_INT>(*temp, i + i2, j + j2) + c;
+                                DF_TYPE_INT *p = (OCV_Util::GetPoint<DF_TYPE_INT>(temp, i + i2, j + j2));
                                 if (p != NULL)
                                 {
-                                    double t = (*p);
-                                    ans += t * (*kernel.GetPoint(i2 + l, j2 + u));
+                                    // double t = *p;
+                                    ans += (DF_TYPE_FLOAT) * (p + c) * ((DF_TYPE_FLOAT)*kernel.GetPoint(i2 + l, j2 + u));
                                 }
                             }
                         }
 
-                        if (ans >= 255 || ans <= -256)
+                        if (ans >= 255.0 || ans <= -256.0)
                         {
-                            ans = 255;
+                            ans = 255.0;
                         }
                         if (ans <= 0)
                         {
                             ans = -ans;
                         }
 
-                        *now_point = (uchar)(ans);
+                        *(now_point + c) = (DF_TYPE_INT)(ans);
                     }
                 }
             }
         }
-        delete temp;
     }
     void DF_IMG::DoThreshold(DF_TYPE_INT Threshold)
     {
@@ -465,7 +486,7 @@ namespace DIP_Fantasy
     }
 
     /********************************************************彩图RGB_IMG对象*****************************************************/
-    void DF_RGB_IMG::DoColorEnhancement(int map[256], RGB channel)
+    void DF_Color_IMG::DoColorEnhancement(int map[256], RGB channel)
     {
         for (int i = 0; i < this->GetRowSize(); i++)
         {
@@ -475,7 +496,7 @@ namespace DIP_Fantasy
             }
         }
     }
-    void DF_RGB_IMG::DoPlus(DF_RGB_IMG &other)
+    void DF_Color_IMG::DoPlus(DF_Color_IMG &other)
     {
         for (int c = 0; c < 3; c++)
         {
@@ -490,7 +511,7 @@ namespace DIP_Fantasy
             }
         }
     }
-    void DF_RGB_IMG::DoThreshold(DF_TYPE_INT Threshold, RGB channel)
+    void DF_Color_IMG::DoThreshold(DF_TYPE_INT Threshold, RGB channel)
     {
         for (int i = 0; i < this->row_size; i++)
         {
@@ -504,19 +525,46 @@ namespace DIP_Fantasy
             }
         }
     }
-    DF_RGB_IMG &DF_RGB_IMG::operator=(DF_RGB_IMG other)
+    DF_Color_IMG &DF_Color_IMG::operator=(DF_Color_IMG other)
     {
         other.OCV_Mat.copyTo(this->OCV_Mat);
         UpdateSize(this->OCV_Mat.rows, this->OCV_Mat.cols);
         return *this;
     }
-    DF_IMG DF_RGB_IMG::ToGrey()
+    void DF_Color_IMG::ConvertToHSI()
+    {
+        cvtColor(this->OCV_Mat, this->OCV_Mat, COLOR_RGB2HSV);
+    }
+    void DF_Color_IMG::ConvertToRGB()
+    {
+    }
+    void DF_Color_IMG::DoColorSlicing(DF_TYPE_INT *H_channel_value, int H_channel_num, int radius)
+    {
+        Mat img = Mat::zeros(this->GetRowSize(), this->GetColSize(), CV_8U);
+        for (int n = 0; n < H_channel_num; n++)
+        {
+            for (int i = 0; i < GetRowSize(); i++)
+            {
+                for (int j = 0; j < GetColSize(); j++)
+                {
+                    if (*GetPoint(i, j, R) - H_channel_value[H_channel_num] <= radius && *GetPoint(i, j, R) - H_channel_value[H_channel_num] >= -radius)
+                    {
+                        DF_TYPE_INT *p = OCV_Util::GetPoint<DF_TYPE_INT>(img, i, j);
+                        if (p != NULL)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+    }
+    DF_IMG DF_Color_IMG::ToGrey()
     {
         Mat grey;
         cvtColor(this->OCV_Mat, grey, COLOR_RGB2GRAY);
         return DF_IMG(grey);
     }
-    DF_TYPE_INT *DF_RGB_IMG::GetPoint(int row, int col, RGB channel)
+    DF_TYPE_INT *DF_Color_IMG::GetPoint(int row, int col, RGB channel)
     {
         DF_TYPE_INT *rt = DF_IMG::GetPoint(row, col);
         if (rt != &this->null_pixel)
@@ -525,7 +573,7 @@ namespace DIP_Fantasy
         }
         return &this->null_pixel;
     }
-    void DF_RGB_IMG::DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius)
+    void DF_Color_IMG::DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius)
     {
         for (int i = 0; i < this->row_size; i++)
         {
@@ -543,7 +591,7 @@ namespace DIP_Fantasy
             }
         }
     }
-    void DF_RGB_IMG::DoMultiply(DF_IMG &mask)
+    void DF_Color_IMG::DoMultiply(DF_IMG &mask)
     {
         for (int c = 0; c < 3; c++)
         {
@@ -563,11 +611,11 @@ namespace DIP_Fantasy
             }
         }
     }
-    DF_RGB_IMG::DF_RGB_IMG(Mat &OpenCV_Mat) : DF_IMG(OpenCV_Mat)
+    DF_Color_IMG::DF_Color_IMG(Mat &OpenCV_Mat) : DF_IMG(OpenCV_Mat)
     {
     }
 
-    DF_RGB_IMG::~DF_RGB_IMG()
+    DF_Color_IMG::~DF_Color_IMG()
     {
     }
 
@@ -586,16 +634,16 @@ namespace DIP_Fantasy
         }
         // return rt_val;
     }
-    DF_RGB_IMG ShiftIMG(DF_RGB_IMG &source, int row_up, int col_left)
+    DF_Color_IMG ShiftIMG(DF_Color_IMG &source, int row_up, int col_left)
     {
-        DF_RGB_IMG rt_val = source;
+        DF_Color_IMG rt_val = source;
         for (int c = 0; c < source.GetMat().channels(); c++)
         {
             for (int i = 0; i < source.GetRowSize(); i++)
             {
                 for (int j = 0; j < source.GetColSize(); j++)
                 {
-                    *rt_val.GetPoint(i, j, (DF_RGB_IMG::RGB)c) = *source.GetPoint(i + row_up, j + col_left, (DF_RGB_IMG::RGB)c);
+                    *rt_val.GetPoint(i, j, (DF_Color_IMG::RGB)c) = *source.GetPoint(i + row_up, j + col_left, (DF_Color_IMG::RGB)c);
                 }
             }
         }

@@ -90,7 +90,7 @@ namespace DIP_Fantasy
         DF_TYPE_INT *GetPoint(int cols, int rows);
     };
 
-    class DF_RGB_IMG : public DF_IMG
+    class DF_Color_IMG : public DF_IMG
     {
     private:
         /* data */
@@ -101,26 +101,35 @@ namespace DIP_Fantasy
             G,
             R
         };
-        DF_RGB_IMG(Mat &OpenCV_Mat);
+        enum HSI
+        {
+            H,
+            S,
+            I
+        };
+        DF_Color_IMG(Mat &OpenCV_Mat);
         //生成空白图，注意size需要是奇数
         //
 
-        ~DF_RGB_IMG();
+        ~DF_Color_IMG();
         //图像相乘
 
         DF_IMG ToGrey();
-        DF_RGB_IMG &operator=(DF_RGB_IMG other);
+        DF_Color_IMG &operator=(DF_Color_IMG other);
         void DoMultiply(DF_IMG &mask);
         void DoPlus(DF_IMG &other);
-        void DoPlus(DF_RGB_IMG &other);
+        void DoPlus(DF_Color_IMG &other);
         void DoColorEnhancement(int map[256], RGB channel);
         void DoThreshold(DF_TYPE_INT Threshold, RGB channel);
+        void ConvertToHSI();
+        void ConvertToRGB();
+        void DoColorSlicing(DF_TYPE_INT *H_channel_value, int H_channel_num, int radius);
         DF_TYPE_INT *GetPoint(int row, int col, RGB channel);
         void DoColorSlicing(DF_TYPE_INT RGB_Value[3], int radius);
     };
 
     void DoShiftIMG(DF_IMG &source, int row_up, int col_left);
-    DF_RGB_IMG ShiftIMG(DF_RGB_IMG &source, int row_up, int col_left);
+    DF_Color_IMG ShiftIMG(DF_Color_IMG &source, int row_up, int col_left);
     void DrawLineToImage(DF_IMG &input, int radius, int theta);
     struct HoughSon
     {
