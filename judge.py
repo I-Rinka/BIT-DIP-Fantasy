@@ -3,7 +3,7 @@ import subprocess
 import math
 # 数据集的放置位置
 dataset_location = "./input/DataSet"
-output_path = "./judge_output.json"
+output_path = "./judge/predict.json"
 
 
 def get_lane(theta, radius):
@@ -27,48 +27,54 @@ def get_lane(theta, radius):
     return lane
 
 
+def get_json(image_path):
+    json = '{"lanes": ['
+
+    value = subprocess.run(
+        ["./DipFantasy", image_path], stdout=subprocess.PIPE).stdout.decode('utf-8')
+    line = value.split('\n')
+    line_num = 0
+    for paraments in line:
+        if ' ' in paraments:
+            if line_num != 0:
+                json += ", "
+            line_num += 1
+            theta, radius = paraments.split(' ')
+            print("theta:"+theta)
+            print("radius:"+radius)
+            lane = get_lane(theta=float(theta),
+                            radius=float(radius))
+            # print(lane)
+            json += lane
+        json += '], "h_samples": ['
+        row = 160
+        while True:
+            json += str(row)
+            row += 10
+            if row >= 720:
+                break
+            json += ', '
+
+    json += '], "raw_file": "'
+    json += image_path.replace(dataset_location, "clips")
+    json += '" ,"run_time":0}'
+    return json
+
+
 if __name__ == '__main__':
     f = open(output_path, "w+")
+    # json = 0
     for root, dirs, files in os.walk(dataset_location):
         for file in files:
+            # json += 1
             if "20.jpg" in file:
                 image_path = root+'/'+file
                 print(image_path)
-                json = '{"lanes": ['
 
-                # value = os.system("./DipFantasy %s" % image_path)
-                value = subprocess.run(
-                    ["./DipFantasy", image_path], stdout=subprocess.PIPE).stdout.decode('utf-8')
-                # print(value)
-                line = value.split('\n')
-                line_num = 0
-                for paraments in line:
-                    if ' ' in paraments:
-                        if line_num != 0:
-                            json += ", "
-                        line_num += 1
-                        theta, radius = paraments.split(' ')
-                        print("theta:"+theta)
-                        print("radius:"+radius)
-                        lane = get_lane(theta=float(theta),
-                                        radius=float(radius))
-                        # print(lane)
-                        json += lane
-                json += '], "h_samples": ['
-                row = 160
-                while True:
-                    json += str(row)
-                    row += 10
-                    if row >= 720:
-                        break
-                    json += ', '
-
-                json += '], "raw_file": "'
-                json += image_path.replace(dataset_location, "clips")
-                json += '" ,"run_time":0}'
-
-                # print(image_path.replace(dataset_location, "clips/"))
-                f.writelines(json+'\n')
+                json=get_json(image_path=image_path)
+                f.writelines(str(json))
                 print(json)
-
-    os.system("python3 ./judge/lane.py %s ./judge/groundtruth.json"%output_path)
+                f.writelines('\n')
+    #不知道为什么输入输出行数会不匹配
+    #老师给的groundtruth还需要改一改
+    os.system("python3 ./judge/lane.py %s ./judge/groundtruth.json" %output_path)
