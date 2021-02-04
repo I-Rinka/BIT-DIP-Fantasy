@@ -100,11 +100,14 @@ class LaneEval(object):
 if __name__ == '__main__':
     import sys
     try:
-        if len(sys.argv) != 3:
-            raise Exception('Invalid input arguments')
-        print(sys.argv[1])
-        print(sys.argv[2])
-        print(LaneEval.bench_one_submit(sys.argv[1], sys.argv[2]))#输入已知的和预测的groundtruth
+        # if len(sys.argv) != 3:
+            # raise Exception('Invalid input arguments')
+        # print(sys.argv[1])
+        # print(sys.argv[2])
+        # 输入已知的和预测的groundtruth
+        # print(LaneEval.bench_one_submit(sys.argv[1], sys.argv[2]))
+        print(LaneEval.bench_one_submit("/home/rinka/Documents/DIP-Fantasy/judge_output.json",
+                                        "/home/rinka/Documents/DIP-Fantasy/groundtruth.json"))
     except Exception as e:
         print(e.message)
         sys.exit(e.message)

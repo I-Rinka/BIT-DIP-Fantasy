@@ -56,7 +56,7 @@ make
 
 ## 评测机
 
-评测机为`judge.py`，来自 <https://github.com/TuSimple/tusimple-benchmark> 中的车道线评测机`lane.py`
+评测机为`lane.py`，来自 <https://github.com/TuSimple/tusimple-benchmark> 中的车道线评测机`lane.py`
 
 将**对应格式**的评测结果输出成`./predict.json`后，在shell中输入命令就能进行跑分：
 

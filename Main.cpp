@@ -11,37 +11,28 @@ using namespace DIP_Fantasy;
 
 int main(int argc, char const *argv[])
 {
-    /*
-    测试项目:
-    + 构造，析构，拷贝函数
-    + 卷积
-    + 相乘
-    + 相加
-    + Sobel
-    + 平移
-    */
-
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626749527113213/20.jpg");
-    Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626726476963805/20.jpg");
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0531/1492626718748019090/20.jpg");
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/line.png");
+    if (argc != 2)
+    {
+        return -1;
+    }
+    Mat image = imread(argv[1]);
 
     DF_Color_IMG input(image);
 
-    // DF_IMG grey=input.ToGrey();
     input.DoConvolution(DF_Kernel(GaussianKernel, 5));
 
-    //获得图像蒙版
+    //color slicing获得黄色和白色的图像蒙版
     int color_radius = 50;
-
     DF_TYPE_INT rgb_y[3] = {0xFE, 0xD1, 0x86};
     DF_TYPE_INT rgb_w[3] = {0xE0, 0xE0, 0xE0};
     DF_Color_IMG y_mask = input;
     DF_Color_IMG w_mask = input;
+
     y_mask.DoColorSlicing(rgb_y, color_radius);
     w_mask.DoColorSlicing(rgb_w, color_radius);
     w_mask.DoPlus(y_mask);
 
+    //遮盖图像上部天空等地方
     for (int i = 0; i < 160; i++)
     {
         for (int c = 0; c < 3; c++)
@@ -53,43 +44,39 @@ int main(int argc, char const *argv[])
             }
         }
     }
-    // w_mask.Show();
-    /*
-    Todo:
-    - 设计一个梯形的遮罩
-    - ~~找到合适的颜色增强方法（直方图均衡不行，可能需要使用HSI）~~
-    - ~~设计一个弧度转y=kx+b的斜率、截矩限定筛选法🉑~~
-    - ~~HSI~~
-    - 转化成json的方法
-    - 找到一个新的角度限定：比如k为负数的时候，必须在中线以内
-    */
+
+    //边界提取
     DF_IMG grey = w_mask.ToGrey();
     grey.DoConvolution(DF_Kernel(SobelKernelX, 3));
+
+    //霍夫变换
     HoughTransition HT(grey, 50);
 
-    cout << grey.GetColSize() << endl;
-    cout << grey.GetColSize() << endl;
     int count = 0;
     for (int i = 0; i < HT.node_queue.size(); i++)
     {
         HoughNode now = HT.node_queue.top();
-        // double cost = cos(((double)now.theta_average / 180.0) * M_PI);
         double cost = cos(((double)now.theta_average / 180.0) * M_PI), sint = sin(((double)now.theta_average / 180.0) * M_PI);
-        double judge = now.radius_average / sint;
-        //radius=sint*row+cost*col
 
+        //直线在图像顶部的截距
+        double uppper = now.radius_average / sint;
+        //直线在图像底部的截距
+        double under = (now.radius_average - input.GetColSize() * cost) / sint;
+
+        //直线的斜率
         double k = 0;
         if (sint != 0)
         {
             k = cost / sint;
         }
-        cout << judge << endl;
-        //row=0时，线必须要图像内
-        if ((judge >= 0 && judge <= input.GetColSize()) && (k < 0 && judge < input.GetColSize() / 2 || k > 0 && judge > input.GetColSize() / 2)) //还要加个必须是梯形，上下大小也有关系，上面不能小于下面
+
+        //满足输出条件的线：上截矩在图像范围内，并且直线得是满足条件的梯形：/ \ 通过k值讨论
+        if ((k > 0 && uppper < input.GetColSize() && uppper >= 0 && (uppper >= under) || k < 0 && uppper >= 0 && uppper <= input.GetColSize() && (uppper <= under))) //还要加个必须是梯形，上下大小也有关系，上面不能小于下面
         {
-            //这边的每个线就是输出的线
+            //输出每个满足条件的线的极坐标
             DrawLineToImage(grey, now.radius_average, now.theta_average);
             count++;
+            cout << now.theta_average << " " << now.radius_average << endl;
             if (count == 5)
             {
                 break;
@@ -98,5 +85,4 @@ int main(int argc, char const *argv[])
 
         HT.node_queue.pop();
     }
-    grey.Show();
 }
