@@ -75,8 +75,8 @@ namespace DIP_Fantasy
         void Show();
 
         void DoConvolution(DF_Kernel kernel);
-        void DoErosion(DF_Kernel kernel, DF_TYPE_INT Threshold);
-        void DoDilation(DF_Kernel kernel, DF_TYPE_INT Threshold);
+        void DoErosion(DF_Kernel kernel);
+        void DoDilation(DF_Kernel kernel);
         void DoMultiply(DF_IMG &mask);
         void DoPlus(DF_IMG &other);
         void DoThreshold(DF_TYPE_INT Threshold);
@@ -180,5 +180,7 @@ namespace DIP_Fantasy
         ~HoughTransition();
         int line_number = 0;
     };
-
+    DF_TYPE_FLOAT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
+    DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
+    DF_TYPE_INT Get_HSI_I(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
 } // namespace DIP_Fantasy

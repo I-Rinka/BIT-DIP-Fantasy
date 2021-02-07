@@ -9,7 +9,7 @@ using namespace std;
 using namespace cv;
 using namespace DIP_Fantasy;
 
-//合规的直线需要符合的要求
+//合规的直线
 bool LineRule(DF_IMG &mat, double theta, double radius)
 {
     double cost = cos((theta / 180.0) * M_PI), sint = sin((theta / 180.0) * M_PI);
@@ -49,10 +49,9 @@ int main(int argc, char const *argv[])
 
     DF_Color_IMG input(image);
 
-    //图像平滑
     input.DoConvolution(DF_Kernel(GaussianKernel, 5));
 
-    //color slicing获得黄色和白色的图像蒙版,即黄色和白色的车道线
+    //color slicing获得黄色和白色的图像蒙版
     int color_radius = 50;
     DF_TYPE_INT rgb_y[3] = {0xFE, 0xD1, 0x86};
     DF_TYPE_INT rgb_w[3] = {0xE0, 0xE0, 0xE0};
@@ -63,9 +62,7 @@ int main(int argc, char const *argv[])
     w_mask.DoColorSlicing(rgb_w, color_radius);
     w_mask.DoPlus(y_mask);
 
-    //边界提取
     input.DoConvolution(DF_Kernel(SobelKernelX, 3));
-
     //遮盖图像上部天空等地方
     for (int i = 0; i < 200; i++)
     {
@@ -79,29 +76,56 @@ int main(int argc, char const *argv[])
         }
     }
 
+    //边界提取
     DF_IMG grey = input.ToGrey();
 
-    //和蒙板相乘
     grey.DoPlus(w_mask);
+    // grey.DoConvolution(DF_Kernel(SobelKernelX, 3));
 
     //霍夫变换
     HoughTransition HT(grey, 50);
 
     int count = 0;
+    vector<HoughNode> final_output;
     for (int i = 0; i < HT.node_queue.size(); i++)
     {
         HoughNode now = HT.node_queue.top();
         //合规才输出
         if (LineRule(grey, now.theta_average, now.radius_average))
         {
-            //输出4条直线效果最佳
-            if (count >= 4)
+            count++;
+            int judge = true;
+            // for (int j = 0; j < final_output.size(); j++)
+            // {
+            //     double cost = cos(((double)now.theta_average / 180.0) * M_PI), sint = sin(((double)now.theta_average / 180.0) * M_PI);
+            //     double under = (now.radius_average - 700 * cost) / sint;
+            //     double cost2 = cos(((double)final_output[j].theta_average / 180.0) * M_PI), sint2 = sin(((double)final_output[j].theta_average / 180.0) * M_PI);
+            //     double under2 = (final_output[j].radius_average - 700 * cost) / sint;
+            //     if (abs(under - under2) > 500)
+            //     {
+            //     }
+            //     else
+            //     {
+            //         judge = false;
+            //     }
+            // }
+            if (judge)
+            {
+                final_output.push_back(now);
+            }
+            if (count > 5)
             {
                 break;
             }
-            count++;
-            cout << now.theta_average << " " << now.radius_average << endl;
         }
         HT.node_queue.pop();
     }
+    for (int i = 0; i < final_output.size(); i++)
+    {
+        HoughNode now = final_output[i];
+        cout << now.theta_average << " " << now.radius_average << endl;
+        // DrawLineToImage(output, now.radius_average, now.theta_average);
+    }
+
+    // output.Show();
 }

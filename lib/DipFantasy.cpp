@@ -419,8 +419,9 @@ namespace DIP_Fantasy
             }
         }
     }
-    void DF_IMG::DoErosion(DF_Kernel kernel, DF_TYPE_INT Threshold)
+    void DF_IMG::DoErosion(DF_Kernel kernel)
     {
+        DF_TYPE_INT Threshold = 50;
         int kernel_row = kernel.GetRowSize();
         int kernel_col = kernel.GetColSize();
         int l = kernel_row / 2;
@@ -452,8 +453,9 @@ namespace DIP_Fantasy
         }
         delete temp;
     }
-    void DF_IMG::DoDilation(DF_Kernel kernel, DF_TYPE_INT Threshold)
+    void DF_IMG::DoDilation(DF_Kernel kernel)
     {
+        DF_TYPE_INT Threshold = 50;
         int kernel_row = kernel.GetRowSize();
         int kernel_col = kernel.GetColSize();
         int l = kernel_row / 2;
@@ -470,11 +472,14 @@ namespace DIP_Fantasy
                     {
                         for (int j2 = -u; j2 < u + 1; j2++)
                         {
-                            DF_TYPE_INT *p = OCV_Util::GetPoint<DF_TYPE_INT>(*temp, i + i2, j + j2) + c;
-                            if (p != NULL && *p > Threshold && *kernel.GetPoint(i2 + l, j2 + u) > 0)
+                            DF_TYPE_INT *p = OCV_Util::GetPoint<DF_TYPE_INT>(*temp, i + i2, j + j2);
+                            if (p != NULL)
                             {
-                                *GetPoint(i, j) = 255;
-                                goto next_pixel;
+                                if (*(p + c) > Threshold && *kernel.GetPoint(i2 + l, j2 + u) > 0)
+                                {
+                                    *(GetPoint(i, j)+c) = 255;
+                                    goto next_pixel;
+                                }
                             }
                         }
                     }
@@ -841,7 +846,41 @@ namespace DIP_Fantasy
     {
         //删除节点简直坑死,还得递归
     }
+    DF_TYPE_FLOAT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
+    {
 
+        double H_Theta = acos(((R - G) + (R - B)) / (2 * sqrt((R - G) * (R - G) + (R - B) * (G - B))));
+        DF_TYPE_FLOAT H = 0;
+        if (G > B)
+        {
+            H = H_Theta;
+        }
+        else
+        {
+            H = 2 * M_PI - H_Theta;
+        }
+        return H;
+    }
+    DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
+    {
+        DF_TYPE_INT min = R;
+        if (G < min)
+        {
+            min = G;
+        }
+        if (B < min)
+        {
+            min = B;
+        }
+        double min2 = (double)min;
+        double rgb = R + G + B;
+        DF_TYPE_FLOAT S = 1 - 3 * min2 / rgb;
+        return S;
+    }
+    DF_TYPE_INT Get_HSI_I(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
+    {
+        return (R + G + B) / 3;
+    }
 } // namespace DIP_Fantasy
 
 #endif

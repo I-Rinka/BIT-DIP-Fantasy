@@ -1,6 +1,7 @@
 import os
 import subprocess
 import math
+import threading
 # 数据集的放置位置
 dataset_location = "./input/DataSet"
 output_path = "./judge/predict.json"
@@ -46,19 +47,27 @@ def get_json(image_path):
                             radius=float(radius))
             # print(lane)
             json += lane
-        json += '], "h_samples": ['
-        row = 160
-        while True:
-            json += str(row)
-            row += 10
-            if row >= 720:
-                break
-            json += ', '
+    json += '], "h_samples": ['
+    row = 160
+    while True:
+        json += str(row)
+        row += 10
+        if row >= 720:
+            break
+        json += ', '
 
     json += '], "raw_file": "'
     json += image_path.replace(dataset_location, "clips")
     json += '" ,"run_time":0}'
     return json
+
+
+def write_json(image_path):
+    print(image_path)
+    json = get_json(image_path=image_path)+'\n'
+    f.writelines(str(json))
+    print(json)
+    # f.writelines('\n')
 
 
 if __name__ == '__main__':
@@ -69,12 +78,19 @@ if __name__ == '__main__':
             # json += 1
             if "20.jpg" in file:
                 image_path = root+'/'+file
-                print(image_path)
+                # print(image_path)
+                # json = get_json(image_path=image_path)
+                # f.writelines(str(json))
+                # print(json)
+                # f.writelines('\n')
 
-                json=get_json(image_path=image_path)
-                f.writelines(str(json))
-                print(json)
-                f.writelines('\n')
-    #不知道为什么输入输出行数会不匹配
-    #老师给的groundtruth还需要改一改
-    os.system("python3 ./judge/lane.py %s ./judge/groundtruth.json" %output_path)
+                # 多线程跑分
+                th = threading.Thread(target=write_json, args=(image_path,))
+                # th.start()
+
+                while True:
+                    if threading.active_count() <= 32:
+                        th.start()
+                        break
+    # 不知道为什么输入输出行数会不匹配
+    # 老师给的groundtruth还需要改一改
