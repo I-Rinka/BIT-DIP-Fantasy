@@ -90,7 +90,7 @@ make
 将**对应格式**的评测结果输出成`./predict.json`后，在shell中输入命令就能进行跑分：
 
 ```shell
-python3 ./judge.py ./predict.json ./groundtruth.json
+python3 ./lane.py ./predict.json ./groundtruth.json
 ```
 
 注意，上面所说的`predict.json`的格式比原来要多加一项`"run_time":`属性以表示处理每一帧所用的时间。因为我们的评测只有一帧图片，并且运行时间对我们来说无关紧要，所以设置为`0`即可。上述格式输出的`predict.json`文件中的每一行的格式应该和这个类似（注意多添加一个`"run_time"=0`）：
