@@ -17,7 +17,7 @@ def get_lane(theta, radius):
             break
         col = (radius-row*math.cos((theta/180.0)*math.pi)) / \
             (math.sin(math.pi*theta/180.0))
-        if col < 0 or col >= 1280:
+        if col < 0 or col >= 1280 or row < 200:
             col = -2
         col = int(col)
         lane += str(col)
@@ -80,19 +80,7 @@ if __name__ == '__main__':
             # json += 1
             if "20.jpg" in file:
                 image_path = root+'/'+file
-                # print(image_path)
-                # json = get_json(image_path=image_path)
-                # f.writelines(str(json))
-                # print(json)
-                # f.writelines('\n')
 
                 # 多线程跑分
                 th = threading.Thread(target=write_json, args=(image_path,))
                 th.start()
-
-                # while True:
-                    # if threading.active_count() <= 32:
-                        # th.start()
-                        # break
-    # 不知道为什么输入输出行数会不匹配
-    # 老师给的groundtruth还需要改一改

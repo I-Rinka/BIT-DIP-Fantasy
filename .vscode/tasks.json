@@ -18,7 +18,7 @@
         {
             "label": "main_debug",
             "type": "shell",
-            "command": "mkdir build;cd build; cmake .. ; cmake --build . ; cp ./DipFantasy ..",
+            "command": "mkdir build;cd build; cmake .. ; cmake --build . --parallel $(nproc); cp ./DipFantasy ..",
         },
         {
             "label": "module_debug",

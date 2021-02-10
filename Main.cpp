@@ -130,29 +130,78 @@ DF_Color_IMG GetYellowLine(DF_Color_IMG &input)
             }
         }
     }
-    output.Show();
+    // output.Show();
     return output;
 }
 int main(int argc, char const *argv[])
 {
 
-    // if (argc != 2)
-    // {
-    //     return -1;
-    // }
-    // Mat image = imread(argv[1]);
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/example.jpg");
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/example.jpg");
-    // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0601/1494453643540652356/20.jpg");
-    Mat image = imread("input/DataSet/0531/1492626388446057821/20.jpg");
-    // Mat image = imread("input/DataSet/0601/1494453731502184768/20.jpg");
+    if (argc != 2)
+    {
+        return -1;
+    }
+    Mat image = imread(argv[1]);
+    // Mat image = imread("input/DataSet/0531/1492626718748019090/20.jpg");
 
     DF_Color_IMG input(image);
 
     input.DoConvolution(DF_Kernel(GaussianKernel, 5));
 
-    DF_Color_IMG YL = GetYellowLine(input);
-    // YL.Show();
-}
+    //color slicing获得黄色和白色的图像蒙版
+    int color_radius = 70;
 
-//迷之点是怎么回事？
+    DF_Color_IMG y_mask = GetYellowLine(input);
+
+    DF_Color_IMG w_mask = input;
+    DF_TYPE_INT white_max = GetWhite(input);
+    white_max *= 0.9;
+    DF_TYPE_INT rgb_w[3] = {white_max, white_max, white_max};
+
+    w_mask.DoColorSlicing(rgb_w, color_radius);
+
+    w_mask.DoPlus(y_mask);
+    // w_mask.Show();
+
+    //遮盖图像上部天空等地方
+
+    // w_mask.Show();
+    //边界提取
+    DF_IMG mask = w_mask.ToGrey();
+    DeleteSky(mask);
+    // mask.Show();
+    mask.DoDilation(DF_Kernel(BoxKernel, 5));
+
+    // DF_IMG grey = input.ToGrey();
+
+    // grey.DoMultiply(mask);
+    DF_IMG grey = mask;
+
+    //DoSkel(mask);
+    mask.DoConvolution(DF_Kernel(SobelKernelX, 3));
+    // DoSkel(grey);
+    //霍夫变换
+    HoughTransition HT(mask, 10);
+
+    int count = 0;
+    for (int i = 0; i < HT.node_queue.size(); i++)
+    {
+        HoughNode now = HT.node_queue.top();
+
+        //满足输出条件的线：上截矩在图像范围内，并且直线得是满足条件的梯形：/ \ 通过k值讨论
+        if (LineRule(grey, now.theta_average, now.radius_average))
+        {
+            //输出每个满足条件的线的极坐标
+            // DrawLineToImage(grey, now.radius_average, now.theta_average);
+            if (count >= 4)
+            {
+                break;
+            }
+            cout << now.theta_average << " " << now.radius_average << endl;
+            DrawLineToImage(mask, now.radius_average, now.theta_average);
+            count++;
+        }
+
+        HT.node_queue.pop();
+    }
+    // mask.Show();
+}
