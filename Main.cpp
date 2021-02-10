@@ -117,8 +117,9 @@ DF_Color_IMG GetYellowLine(DF_Color_IMG &input)
             DF_TYPE_INT *G = output.GetPoint(i, j, DF_Color_IMG::G);
             DF_TYPE_INT *B = output.GetPoint(i, j, DF_Color_IMG::B);
             int H = Get_HSI_H(*R, *G, *B);
-            int range = 10;
-            if (H >= 30 - range && H <= 30 + range)
+            DF_TYPE_FLOAT S = Get_HSI_S(*R, *G, *B);
+            int range = 5;
+            if (S >= 0.40 && ((H >= 30 - range && H <= 30 + range) || (H >= 40 - range && H <= 40 + range)))
             {
             }
             else
@@ -143,7 +144,7 @@ int main(int argc, char const *argv[])
     // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/example.jpg");
     // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/example.jpg");
     // Mat image = imread("/home/rinka/Documents/DIP-Fantasy/input/DataSet/0601/1494453643540652356/20.jpg");
-    Mat image = imread("/root/Dev/DIP-Fantasy/input/DataSet/0601/1494453731502184768/20.jpg");
+    Mat image = imread("input/DataSet/0531/1492626388446057821/20.jpg");
     // Mat image = imread("input/DataSet/0601/1494453731502184768/20.jpg");
 
     DF_Color_IMG input(image);

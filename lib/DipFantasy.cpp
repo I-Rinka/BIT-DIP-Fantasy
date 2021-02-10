@@ -911,19 +911,43 @@ namespace DIP_Fantasy
     }
     DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {
-        DF_TYPE_INT min = R;
-        if (G < min)
+        DF_TYPE_FLOAT CMax = R / 255.0;
+        DF_TYPE_FLOAT CMin = R / 255.0;
+        DF_TYPE_FLOAT g = G / 255.0;
+        DF_TYPE_FLOAT b = B / 255.0;
+
+        if (g > CMax)
         {
-            min = G;
+            CMax = g;
         }
-        if (B < min)
+        if (b > CMax)
         {
-            min = B;
+            CMax = b;
         }
-        double min2 = (double)min;
-        double rgb = R + G + B;
-        DF_TYPE_FLOAT S = 1 - 3 * min2 / rgb;
-        return S;
+
+        if (g < CMin)
+        {
+            CMin = g;
+        }
+        if (b < CMin)
+        {
+            CMin = b;
+        }
+
+        double L = (double)(CMax + CMin) / 2;
+
+        if (CMax == CMin)
+        {
+            return 0;
+        }
+        else if (L >= 0.5)
+        {
+            return (DF_TYPE_FLOAT)(CMax - CMin) / (2.0 - CMax - CMin);
+        }
+        else
+        {
+            return (DF_TYPE_FLOAT)(CMax - CMin) / (CMax + CMin);
+        }
     }
     DF_TYPE_INT Get_HSI_I(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {
