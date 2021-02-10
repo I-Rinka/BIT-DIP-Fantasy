@@ -106,32 +106,7 @@ void DoSkel(DF_IMG &input)
 
     skel.copyTo(input.GetMat());
 }
-DF_Color_IMG GetYellowLine(DF_Color_IMG &input)
-{
-    DF_Color_IMG output = input;
-    for (int i = 0; i < output.GetRowSize(); i++)
-    {
-        for (int j = 0; j < output.GetColSize(); j++)
-        {
-            DF_TYPE_INT *R = output.GetPoint(i, j, DF_Color_IMG::R);
-            DF_TYPE_INT *G = output.GetPoint(i, j, DF_Color_IMG::G);
-            DF_TYPE_INT *B = output.GetPoint(i, j, DF_Color_IMG::B);
-            DF_TYPE_INT H = Get_HSI_H(*R, *G, *B);
-            int range = 10;
-            if (H >= 30 - range && H <= 30 + range)
-            {
-            }
-            else
-            {
-                *R = 0;
-                *G = 0;
-                *B = 0;
-            }
-        }
-    }
-    output.Show();
-    return output;
-}
+
 int main(int argc, char const *argv[])
 {
 
@@ -147,10 +122,78 @@ int main(int argc, char const *argv[])
 
     DF_Color_IMG input(image);
 
+    //蒙板
+
+    // input.Show();
+
+    //图像平滑
     input.DoConvolution(DF_Kernel(GaussianKernel, 5));
 
-    DF_Color_IMG YL = GetYellowLine(input);
-    // YL.Show();
+    //color slicing获得黄色和白色的图像蒙版,即黄色和白色的车道线
+    int color_radius = 50;
+    DF_TYPE_INT white = GetWhite(input);
+    // rgb(235, 167, 92)
+    // #EFA15A
+    // 0xD1;
+    // DF_TYPE_INT rgb_y[3] = {0xFE, 0xD1, 0x86};
+    DF_TYPE_INT rgb_y[3] = {220, 180, 100};
+    // DF_TYPE_INT rgb_w[3] = {0xE0, 0xE0, 0xE0};
+    DF_TYPE_INT rgb_w[3] = {white, white, white};
+    DF_Color_IMG y_mask = input;
+    DF_Color_IMG w_mask = input;
+
+    y_mask.DoColorSlicing(rgb_y, color_radius);
+    w_mask.DoColorSlicing(rgb_w, color_radius);
+    w_mask.DoPlus(y_mask);
+    // w_mask.Show();
+    //边界提取
+
+    // DF_IMG grey = input.ToGrey();
+    // input.Show();
+
+    DF_IMG mask = w_mask.ToGrey();
+    // medianBlur(mask.GetMat(), mask.GetMat(), 5);
+    DeleteSky(mask);
+    mask.Show();
+    //和蒙板相乘
+    DF_IMG grey = input.ToGrey();
+    grey.DoConvolution(DF_Kernel(SobelKernelX, 3));
+
+    grey.DoMultiply(mask);
+    // DoSkel(grey);
+    grey.Show();
+
+    // grey.DoPlus(w_mask);
+
+    // grey.Show();
+
+    // grey2.Show();
+    // grey.Show();
+
+    //霍夫变换
+
+    HoughTransition HT(grey, 10);
+    // grey.Show();
+    int count = 0;
+    for (int i = 0; i < HT.node_queue.size(); i++)
+    {
+        HoughNode now = HT.node_queue.top();
+        //合规才输出
+        if (LineRule(grey, now.theta_average, now.radius_average))
+        {
+            //输出4条直线效果最佳
+            if (count >= 4)
+            {
+                break;
+            }
+            count++;
+            cout << now.theta_average << " " << now.radius_average << endl;
+            DrawLineToImage(grey, now.radius_average, now.theta_average);
+            grey.Show();
+        }
+        HT.node_queue.pop();
+    }
+    grey.Show();
 }
 
 //迷之点是怎么回事？

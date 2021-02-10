@@ -63,6 +63,7 @@ def get_json(image_path):
 
 
 def write_json(image_path):
+    f = open(output_path, "a")
     print(image_path)
     json = get_json(image_path=image_path)+'\n'
     f.writelines(str(json))
@@ -71,8 +72,9 @@ def write_json(image_path):
 
 
 if __name__ == '__main__':
-    f = open(output_path, "w+")
     # json = 0
+    f = open(output_path, "w+")
+    f.close()
     for root, dirs, files in os.walk(dataset_location):
         for file in files:
             # json += 1
@@ -86,11 +88,11 @@ if __name__ == '__main__':
 
                 # 多线程跑分
                 th = threading.Thread(target=write_json, args=(image_path,))
-                # th.start()
+                th.start()
 
-                while True:
-                    if threading.active_count() <= 32:
-                        th.start()
-                        break
+                # while True:
+                    # if threading.active_count() <= 32:
+                        # th.start()
+                        # break
     # 不知道为什么输入输出行数会不匹配
     # 老师给的groundtruth还需要改一改

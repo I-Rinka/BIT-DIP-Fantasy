@@ -477,7 +477,7 @@ namespace DIP_Fantasy
                             {
                                 if (*(p + c) > Threshold && *kernel.GetPoint(i2 + l, j2 + u) > 0)
                                 {
-                                    *(GetPoint(i, j)+c) = 255;
+                                    *(GetPoint(i, j) + c) = 255;
                                     goto next_pixel;
                                 }
                             }
@@ -680,7 +680,7 @@ namespace DIP_Fantasy
         {
             this->son_max_hough_value = son_hough_value;
             this->theta_average = son_theta;
-            this->theta_average = son_radius;
+            this->radius_average = son_radius;
         }
         if (this->son == NULL)
         {
@@ -742,7 +742,8 @@ namespace DIP_Fantasy
         if (theta > 180 || theta < -90 || radius < -diag_size || radius > diag_size)
         {
             printf("ouch!");
-            return &this->null_point;
+            // return &this->null_point;
+            return NULL;
         }
 
         // return this->hough_mat + (90 + 180 + 1) * (radius + diag_size) + (theta + 90);
@@ -751,7 +752,7 @@ namespace DIP_Fantasy
 
     HoughTransition::HoughTransition(DF_IMG input, DF_TYPE_INT Threshold)
     {
-        int radius_range = 100;
+        int radius_range = 50;
         int theta_range = 20;
         row_size = input.GetRowSize();
         col_size = input.GetColSize();
@@ -771,10 +772,15 @@ namespace DIP_Fantasy
             {
                 if (*input.GetPoint(i, j) > Threshold)
                 {
-                    for (int theta = -90; theta <= 180; theta++)
+                    for (int theta = -90; theta < 180; theta++)
                     {
                         int radius = i * cos(((double)theta / 180.0) * M_PI) + j * sin(((double)theta / 180.0) * M_PI);
                         int *point = GetHoughPoint(theta, radius);
+                        if (point == NULL || abs(theta - 90) <= 10)
+                        {
+                            continue;
+                        }
+
                         if (*point == 0)
                         {
                             val_point++;
@@ -786,11 +792,17 @@ namespace DIP_Fantasy
             }
         }
         long long hough_point_threshold = val / val_point * 2;
-        for (int i = -diag_size; i <= diag_size; i++)
+        for (int i = -diag_size; i < diag_size; i++)
         {
-            for (int j = -90; j <= 180; j++)
+            for (int j = -90; j < 180; j++)
             {
                 int point_value = *GetHoughPoint(j, i);
+                int *point_point = GetHoughPoint(j, i);
+                if (point_point == NULL || abs(j - 90) <= 10)
+                {
+                    continue;
+                }
+
                 if (point_value > hough_point_threshold)
                 {
                     HoughNode *cursor = this->hough_HEAD;
@@ -810,7 +822,8 @@ namespace DIP_Fantasy
                             break;
                         }
                         //放子节点
-                        if ((cursor->radius_average - i <= radius_range && cursor->radius_average - i >= -radius_range) && (cursor->theta_average - j <= theta_range && cursor->theta_average - j >= -theta_range))
+                        // if ((cursor->radius_average - i <= radius_range && cursor->radius_average - i >= -radius_range) && (cursor->theta_average - j <= theta_range && cursor->theta_average - j >= -theta_range))
+                        if (abs(i - cursor->radius_average) <= radius_range && abs(cursor->theta_average - j) <= theta_range)
                         {
                             cursor->InsertSon(j, i, point_value);
                             break;
@@ -846,20 +859,56 @@ namespace DIP_Fantasy
     {
         //删除节点简直坑死,还得递归
     }
-    DF_TYPE_FLOAT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
+    DF_TYPE_INT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {
+        DF_TYPE_INT CMax = R;
+        DF_TYPE_INT CMin = R;
 
-        double H_Theta = acos(((R - G) + (R - B)) / (2 * sqrt((R - G) * (R - G) + (R - B) * (G - B))));
-        DF_TYPE_FLOAT H = 0;
-        if (G > B)
+        if (G > CMax)
         {
-            H = H_Theta;
+            CMax = G;
         }
-        else
+        if (B > CMax)
         {
-            H = 2 * M_PI - H_Theta;
+            CMax = B;
         }
-        return H;
+
+        if (G < CMin)
+        {
+            CMin = G;
+        }
+        if (B < CMin)
+        {
+            CMin = B;
+        }
+
+        int delta = CMax - CMin;
+        DF_TYPE_FLOAT rt_val = 0;
+        if (delta == 0)
+        {
+            return 0;
+        }
+        else if (CMax == R)
+        {
+            double GB = ((int)G - (int)B) / delta;
+            rt_val = ((long long)GB) * 60;
+            if (G < B)
+            {
+                rt_val += 360;
+            }
+        }
+        else if (CMax == G)
+        {
+            double BR = ((int)B - (int)R) / delta;
+            rt_val = ((long long)BR) * 60 + 120;
+        }
+        else if (CMax == B)
+        {
+            double RG = ((int)R - (int)G) / delta;
+            rt_val = ((long long)RG) * 60 + 240;
+        }
+        if (rt_val < 0)
+            return rt_val;
     }
     DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {

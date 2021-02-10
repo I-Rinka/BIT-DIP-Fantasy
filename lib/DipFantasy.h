@@ -180,7 +180,7 @@ namespace DIP_Fantasy
         ~HoughTransition();
         int line_number = 0;
     };
-    DF_TYPE_FLOAT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
+    DF_TYPE_INT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
     DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
     DF_TYPE_INT Get_HSI_I(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B);
 } // namespace DIP_Fantasy
