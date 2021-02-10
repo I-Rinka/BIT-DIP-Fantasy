@@ -859,10 +859,10 @@ namespace DIP_Fantasy
     {
         //删除节点简直坑死,还得递归
     }
-    DF_TYPE_INT Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
+    int Get_HSI_H(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {
-        DF_TYPE_INT CMax = R;
-        DF_TYPE_INT CMin = R;
+        int CMax = R;
+        int CMin = R;
 
         if (G > CMax)
         {
@@ -883,15 +883,15 @@ namespace DIP_Fantasy
         }
 
         int delta = CMax - CMin;
-        DF_TYPE_FLOAT rt_val = 0;
+        int rt_val = 0;
         if (delta == 0)
         {
             return 0;
         }
         else if (CMax == R)
         {
-            double GB = ((int)G - (int)B) / delta;
-            rt_val = ((long long)GB) * 60;
+            double GB = ((double)G - (double)B) / delta;
+            rt_val = (GB)*60;
             if (G < B)
             {
                 rt_val += 360;
@@ -899,16 +899,15 @@ namespace DIP_Fantasy
         }
         else if (CMax == G)
         {
-            double BR = ((int)B - (int)R) / delta;
-            rt_val = ((long long)BR) * 60 + 120;
+            double BR = ((double)B - (double)R) / delta;
+            rt_val = (BR)*60 + 120;
         }
         else if (CMax == B)
         {
-            double RG = ((int)R - (int)G) / delta;
-            rt_val = ((long long)RG) * 60 + 240;
+            double RG = ((double)R - (double)G) / delta;
+            rt_val = (RG)*60 + 240;
         }
-        if (rt_val < 0)
-            return rt_val;
+        return rt_val;
     }
     DF_TYPE_FLOAT Get_HSI_S(DF_TYPE_INT R, DF_TYPE_INT G, DF_TYPE_INT B)
     {
