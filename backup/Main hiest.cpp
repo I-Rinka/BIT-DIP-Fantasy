@@ -115,6 +115,7 @@ int main(int argc, char const *argv[])
         return -1;
     }
     Mat image = imread(argv[1]);
+    // Mat image = imread("input/example.jpg");
 
     DF_Color_IMG input(image);
 
@@ -132,6 +133,7 @@ int main(int argc, char const *argv[])
 
     w_mask.DoPlus(y_mask);
 
+
     DF_IMG mask = w_mask.ToGrey();
 
     //删除天空
@@ -141,9 +143,9 @@ int main(int argc, char const *argv[])
     DF_IMG grey = mask;
 
     //边界提取
-    grey.DoConvolution(DF_Kernel(SobelKernelX, 3));
+    mask.DoConvolution(DF_Kernel(SobelKernelX, 3));
     //霍夫变换
-    HoughTransition HT(grey, 10);
+    HoughTransition HT(mask, 10);
 
     int count = 0;
     for (int i = 0; i < HT.node_queue.size(); i++)

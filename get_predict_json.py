@@ -4,12 +4,13 @@ import math
 import threading
 # 数据集的放置位置
 dataset_location = "./input/DataSet"
+#输出的位置
 output_path = "./judge/predict.json"
+#可执行文件的位置
+exe_path = "./DipFantasy"
 
 
 def get_lane(theta, radius):
-    # double cost = cos(((double)theta / 180.0) * M_PI), sint = sin(((double)theta / 180.0) * M_PI);
-    # *input.GetPoint(i, y) = print_val; int y = (radius - i * cost) / sint;
     row = 160
     lane = "["
     while True:
@@ -17,7 +18,7 @@ def get_lane(theta, radius):
             break
         col = (radius-row*math.cos((theta/180.0)*math.pi)) / \
             (math.sin(math.pi*theta/180.0))
-        if col < 0 or col >= 1280 or row < 200:
+        if col < 0 or col >= 1280 or row < 260:
             col = -2
         col = int(col)
         lane += str(col)
@@ -32,7 +33,8 @@ def get_json(image_path):
     json = '{"lanes": ['
 
     value = subprocess.run(
-        ["./DipFantasy", image_path], stdout=subprocess.PIPE).stdout.decode('utf-8')
+        [exe_path, image_path], stdout=subprocess.PIPE).stdout.decode('utf-8')
+
     line = value.split('\n')
     line_num = 0
     for paraments in line:
@@ -45,7 +47,6 @@ def get_json(image_path):
             print("radius:"+radius)
             lane = get_lane(theta=float(theta),
                             radius=float(radius))
-            # print(lane)
             json += lane
     json += '], "h_samples": ['
     row = 160
@@ -68,7 +69,6 @@ def write_json(image_path):
     json = get_json(image_path=image_path)+'\n'
     f.writelines(str(json))
     print(json)
-    # f.writelines('\n')
 
 
 if __name__ == '__main__':
@@ -81,6 +81,6 @@ if __name__ == '__main__':
             if "20.jpg" in file:
                 image_path = root+'/'+file
 
-                # 多线程跑分
+                # 多线程输入文件
                 th = threading.Thread(target=write_json, args=(image_path,))
                 th.start()
